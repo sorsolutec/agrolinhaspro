@@ -1,20 +1,20 @@
 # AGROLINHAS PRO — MANUAL OPERACIONAL DO USUÁRIO
-**Software de Agricultura de Precisão, Traçado de Linhas de Plantio & Piloto Automático Agrícola**
-*Versão 2.5.0 Enterprise — Atualizado em Agosto/2026*
+**Software de Agricultura de Precisão, Traçado de Linhas de Plantio, Telemetria ISOBUS & Piloto Automático Agrícola**
+*Versão 2.6.0 Enterprise — Atualizado em Setembro/2026*
 
 ---
 
 ## SUMÁRIO
 1. [Visão Geral & Inicialização](#1-visão-geral--inicialização)
 2. [Controles de Mapa (Estilo Google Earth)](#2-controles-de-mapa-estilo-google-earth)
-3. [Delimitação do Talhão (Desenho & KML)](#3-delimitação-do-talhão-desenho--kml)
+3. [Delimitação do Talhão (Desenho, KML, Shapefile ESRI & NHP)](#3-delimitação-do-talhão-desenho-kml-shapefile-esri--nhp)
 4. [Delimitação de Áreas Abertas vs Fechadas (APP / Mata Interna)](#4-delimitação-de-áreas-abertas-vs-fechadas-app--mata-interna)
 5. [Planejamento de Linhas de Plantio (Reta A-B & Azimute)](#5-planejamento-de-linhas-de-plantio-reta-a-b--azimute)
 6. [Topografia Real & Curvas de Nível (Copernicus DEM & RTK CSV)](#6-topografia-real--curvas-de-nível-copernicus-dem--rtk-csv)
 7. [Piloto Virtual, Cabine & Lightbar HUD](#7-piloto-virtual-cabine--lightbar-hud)
 8. [Controle Automático de Seções da Barra](#8-controle-automático-de-seções-da-barra)
-9. [Exportação KML & Compatibilidade com Monitores](#9-exportação-kml--compatibilidade-com-monitores)
-10. [Conexão GNSS / RTK Centimétrico](#10-conexão-gnss--rtk-centimétrico)
+9. [Exportação Multi-Formato (Shapefile, NHP, KML, GPX & GeoJSON)](#9-exportação-multi-formato-shapefile-nhp-kml-gpx--geojson)
+10. [Conexão GNSS / RTK Centimétrico & Telemetria ISOBUS / CAN J1939](#10-conexão-gnss--rtk-centimétrico--telemetria-isobus--can-j1939)
 
 ---
 
@@ -115,19 +115,25 @@ O motor `SectionEngine` monitora cada seção da barra de plantio:
 
 ---
 
-## 9. EXPORTAÇÃO KML & COMPATIBILIDADE COM MONITORES
+## 9. EXPORTAÇÃO MULTI-FORMATO & COMPATIBILIDADE COM MONITORES
 
-Todas as geometrias e linhas geradas podem ser exportadas em formatos padrão de mercado:
-- **KML Linhas de Plantio:** Compatível com *John Deere GS3 / Gen4, Trimble GFX / TMX, Climate FieldView, Topcon, Agres e Google Earth*.
+Todas as geometrias, passadas e linhas geradas podem ser importadas ou exportadas nos principais formatos da agricultura mundial:
+- **ESRI Shapefile (.shp.zip):** Formato padrão para monitores John Deere GS4 / Gen4, Trimble GFX/TMX, Climate FieldView, AgLeader e softwares de geoprocessamento (QGIS, ArcGIS). Exporta pacote ZIP completo contendo `.shp`, `.dbf`, `.shx` e `.prj` (WGS84).
+- **NHP (Topcon / Stara / AgLeader):** Formato de orientação e limites perimetrais nativo para monitores Topcon e Stara.
+- **KML Linhas de Plantio:** Compatível com *Google Earth*, monitores agrícolas e pulverizadores.
+- **GPX & GeoJSON:** Para receptores de mão Garmin e integração com sistemas GIS Web.
 - **KML Áreas Abertas (Lavoura Líquida):** Perímetro limpo com exclusão de APPs e matas para delimitação de bordadura.
 
 ---
 
-## 10. CONEXÃO GNSS / RTK CENTIMÉTRICO
+## 10. CONEXÃO GNSS / RTK CENTIMÉTRICO & TELEMETRIA ISOBUS / CAN J1939
 
-Clique no selo **RTK FIX** no topo da tela:
-- Suporta conexão Bluetooth ou Serial NMEA (`$GNGGA`, `$GNRMC`).
-- Modos de Simulação: **RTK FIX (±1.8cm)**, **RTK FLOAT (±18cm)** ou receptor GNSS autônomo.
+Acesse a **Estação GNSS / ISOBUS** ou clique no selo **RTK FIX** no topo da tela:
+- **Receptores GNSS / RTK:** Conecte via Web Bluetooth ou Serial USB NMEA (`$GNGGA`, `$GNRMC`). Oferece simulador centimétrico RTK FIX (±1.8cm) e RTK FLOAT (±18cm).
+- **Telemetria ISOBUS (ISO 11783) & J1939 CAN:** Conecte via **Gateway WebSocket CAN**, **Bluetooth CAN** (Macchina M2, ELM327) ou **Serial USB CAN (SLCAN)** para monitorar em tempo real:
+  - RPM do Motor, Velocidade de Roda, Consumo Instantâneo de Diesel (L/h), Temperatura e Pressão Hidráulica.
+  - Status do Task Controller ISOBUS (TC-GEO) com engate automático de seções e envio de taxa de aplicação (L/ha).
+  - Simulador CAN J1939 integrado para testes na cabine.
 
 ---
 

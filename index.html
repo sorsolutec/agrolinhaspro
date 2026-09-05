@@ -21,6 +21,10 @@
   <script>
       pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
   </script>
+
+  <!-- Dependências para Shapefile ESRI (.shp.zip) e JSZip -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://unpkg.com/shpjs@latest/dist/shp.js"></script>
 </head>
 <body>
 
@@ -73,7 +77,7 @@
 
       <div class="nav-item" data-view="rtk">
         <i class="fa-solid fa-satellite-dish nav-item-icon"></i>
-        <span class="nav-item-label">3. Estação GNSS / RTK</span>
+        <span class="nav-item-label">3. Estação GNSS / ISOBUS</span>
       </div>
 
       <div class="nav-section-title">Ajuda & Documentação</div>
@@ -104,7 +108,7 @@
     <!-- Rodapé da Barra Lateral -->
     <div class="sidebar-footer">
       <div style="font-size:11px; color:var(--text-muted);">
-        <span>v2.5.0 SaaS</span>
+        <span>v2.6.0 SaaS</span>
       </div>
       <div style="display:flex; gap:6px;">
         <span class="brand-badge" style="background:var(--accent);">ONLINE</span>
@@ -120,6 +124,9 @@
     <!-- TOPBAR SUPERIOR -->
     <header id="app-topbar">
       <div class="topbar-left">
+        <button class="sidebar-toggle-btn mobile-only-toggle" id="btnMobileSidebarToggle" title="Menu Principal">
+          <i class="fa-solid fa-bars"></i>
+        </button>
         <div class="view-title-group">
           <span class="view-title" id="currentViewTitle">Estação Cartográfica GIS</span>
           <span class="view-subtitle" id="currentViewSubtitle">Planejamento e Traçado de Linhas de Plantio</span>
@@ -128,7 +135,7 @@
 
       <!-- Telemetria Central -->
       <div class="topbar-center">
-        <div class="telemetry-pill" id="rtkPill" title="Clique para configurar antena GNSS/RTK">
+        <div class="telemetry-pill" id="rtkPill" title="Clique para configurar antena GNSS/RTK e ISOBUS">
           <div class="rtk-indicator-dot fix" id="rtkDot"></div>
           <span id="rtkLabel" style="color:var(--accent); font-weight:700;">RTK FIX</span>
           <span id="rtkSats" style="color:var(--text-muted); font-size:11px;">(19 sats)</span>
@@ -246,8 +253,8 @@
               <button class="btn" id="btnDrawPoly">
                 <i class="fa-solid fa-pen-nib"></i> Desenhar
               </button>
-              <button class="btn" id="btnImportFile">
-                <i class="fa-solid fa-file-import"></i> Importar KML
+              <button class="btn" id="btnImportFile" title="Importar arquivos KML, Shapefile (.zip), NHP, GPX ou GeoJSON">
+                <i class="fa-solid fa-file-import"></i> Importar KML / SHP / NHP
               </button>
             </div>
             <div style="margin-top: 8px;">
@@ -255,7 +262,7 @@
                 <i class="fa-solid fa-file-pdf"></i> Importar Memorial Descritivo (PDF/TXT)
               </button>
             </div>
-            <input type="file" id="fileInput" accept=".kml,.geojson,.json" style="display:none;" />
+            <input type="file" id="fileInput" accept=".kml,.geojson,.json,.gpx,.zip,.shp,.nhp" style="display:none;" />
             <input type="file" id="memorialInput" accept=".pdf,.txt" style="display:none;" />
           </div>
 

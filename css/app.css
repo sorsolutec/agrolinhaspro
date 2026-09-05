@@ -1697,3 +1697,245 @@ button.btn:disabled {
   margin-right: 4px;
 }
 
+/* ==========================================================================
+   RESPONSIVE DESIGN FOR TABLETS & SMARTPHONES (CSS MEDIA QUERIES)
+   ========================================================================== */
+
+/* 1. MOSTRAR BOTÃO HAMBÚRGUER MÓVEL NA TOPBAR */
+.mobile-only-toggle {
+  display: none !important;
+}
+
+@media (max-width: 899px) {
+  .mobile-only-toggle {
+    display: flex !important;
+    background: transparent;
+    border: none;
+    color: var(--text-main);
+    font-size: 18px;
+    padding: 6px 10px 6px 0;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+/* 2. TABLETS & SMARTPHONES (TELA MÁXIMA DE 899px) */
+@media (max-width: 899px) {
+  /* Layout Base & Menu Lateral */
+  #app-sidebar {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 1200 !important;
+    width: 280px !important;
+    transform: translateX(-100%);
+    box-shadow: 4px 0 25px rgba(0, 0, 0, 0.7);
+    transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  #app-sidebar.mobile-open {
+    transform: translateX(0) !important;
+  }
+
+  #app-main {
+    width: 100vw;
+    height: 100vh;
+  }
+
+  #app-topbar {
+    padding: 0 10px;
+    gap: 8px;
+    height: 54px;
+  }
+
+  .topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .view-subtitle {
+    display: none;
+  }
+
+  .view-title {
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 170px;
+  }
+
+  .telemetry-pill {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+
+  /* Painel Flutuante GIS (Bottom Sheet Drawer no Mobile/Tablet) */
+  .gis-floating-panel {
+    top: auto !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    max-height: 72vh !important;
+    border-radius: 20px 20px 0 0 !important;
+    z-index: 800 !important;
+    transform: translateY(calc(100% - 54px)) !important;
+    box-shadow: 0 -8px 26px rgba(0, 0, 0, 0.55) !important;
+    background: rgba(18, 27, 21, 0.97) !important;
+    backdrop-filter: blur(12px) !important;
+  }
+
+  .gis-floating-panel.mobile-expanded {
+    transform: translateY(0) !important;
+  }
+
+  .gis-panel-handle {
+    display: flex !important;
+    justify-content: center;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  /* AgriBus Lightbar HUD Overlay no Mobile/Tablet */
+  .agribus-hud-container {
+    width: calc(100% - 20px) !important;
+    max-width: 480px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    bottom: 64px !important;
+    padding: 8px 12px !important;
+  }
+
+  /* Ajustes na Barra de Seções */
+  .section-boxes-row {
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    gap: 3px !important;
+    max-height: 60px;
+    overflow-y: auto;
+  }
+
+  .section-box {
+    min-width: 22px !important;
+    height: 22px !important;
+    font-size: 9px !important;
+  }
+
+  /* Botões Flutuantes do Mapa (Direita) */
+  .map-floating-controls {
+    bottom: 70px !important;
+    right: 10px !important;
+    gap: 6px !important;
+  }
+
+  .map-tool-fab {
+    width: 38px !important;
+    height: 38px !important;
+    font-size: 14px !important;
+  }
+
+  /* Google Earth Nav Controller */
+  .ge-nav-controller {
+    bottom: 70px !important;
+    right: 10px !important;
+  }
+
+  /* Barra de Ferramentas de Zoneamento do Mapa */
+  .map-zoning-toolbar {
+    top: 10px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: calc(100vw - 20px) !important;
+    max-width: 580px !important;
+    overflow-x: auto !important;
+    padding: 5px 8px !important;
+    border-radius: 12px !important;
+    justify-content: space-between !important;
+  }
+
+  .zoning-btn span {
+    display: none !important;
+  }
+
+  .zoning-btn {
+    padding: 6px 10px !important;
+  }
+
+  /* Grids de Botões e Estatísticas */
+  .btn-grid {
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)) !important;
+    gap: 6px !important;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(75px, 1fr)) !important;
+    gap: 6px !important;
+  }
+
+  /* Modais no Mobile */
+  .modal-card {
+    width: 95vw !important;
+    max-width: 540px !important;
+    max-height: 90vh !important;
+    padding: 14px !important;
+    overflow-y: auto !important;
+  }
+
+  .page-view-wrapper {
+    padding: 12px 10px !important;
+  }
+}
+
+/* 3. SMARTPHONES EM PORTRAIT (< 480px) */
+@media (max-width: 479px) {
+  #app-topbar {
+    height: 50px !important;
+  }
+
+  .topbar-right button span {
+    display: none !important; /* Esconde texto dos botões na topbar, mantendo ícones */
+  }
+
+  .topbar-right button {
+    padding: 6px 10px !important;
+  }
+
+  #rtkSats {
+    display: none !important;
+  }
+
+  .hud-top-meta .hud-values {
+    font-size: 10.5px !important;
+    gap: 6px !important;
+  }
+
+  .hud-led-bar {
+    gap: 2px !important;
+    height: 18px !important;
+  }
+
+  .hud-led {
+    height: 16px !important;
+    border-radius: 2px !important;
+  }
+
+  .hud-bottom-meta {
+    font-size: 10px !important;
+  }
+
+  .data-table-wrapper {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .data-table th, .data-table td {
+    padding: 8px 6px !important;
+    font-size: 11px !important;
+  }
+}
+

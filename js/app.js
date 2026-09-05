@@ -13,6 +13,8 @@ import { FleetManager } from './modules/fleetManager.js';
 import { WorkOrderService } from './modules/workOrder.js';
 import { CutManager } from './modules/cutManager.js';
 import { MemorialParser } from './modules/memorialParser.js';
+import { ShapefileHandler } from './modules/shapefileHandler.js';
+import { IsobusCanStation } from './modules/isobusCanStation.js';
 
 (function() {
   'use strict';
@@ -137,6 +139,7 @@ import { MemorialParser } from './modules/memorialParser.js';
     hudDevDirection: document.getElementById('hudDevDirection'),
     hudDevValue: document.getElementById('hudDevValue'),
     hudAccuracy: document.getElementById('hudAccuracy'),
+    hudRpm: document.getElementById('hudRpm'),
     sectionBoxesContainer: document.getElementById('sectionBoxesContainer'),
 
     // Navigation Controls
@@ -144,7 +147,7 @@ import { MemorialParser } from './modules/memorialParser.js';
     btnStartGps: document.getElementById('btnStartGps'),
     btnStopNav: document.getElementById('btnStopNav'),
 
-    // Modals
+    // Modals & Hardware GNSS / ISOBUS CAN
     gnssModal: document.getElementById('gnssModal'),
     btnCloseGnssModal: document.getElementById('btnCloseGnssModal'),
     btnBtConnect: document.getElementById('btnBtConnect'),
@@ -153,6 +156,21 @@ import { MemorialParser } from './modules/memorialParser.js';
     btnSimFloat: document.getElementById('btnSimFloat'),
     btnDisconnectGnss: document.getElementById('btnDisconnectGnss'),
     nmeaStreamArea: document.getElementById('nmeaStreamArea'),
+
+    // Telemetria ISOBUS CAN
+    canGatewayUrl: document.getElementById('canGatewayUrl'),
+    canTcStatus: document.getElementById('canTcStatus'),
+    canStatusBadge: document.getElementById('canStatusBadge'),
+    btnConnectCanWs: document.getElementById('btnConnectCanWs'),
+    btnConnectCanBt: document.getElementById('btnConnectCanBt'),
+    btnConnectCanSerial: document.getElementById('btnConnectCanSerial'),
+    btnSimulateCan: document.getElementById('btnSimulateCan'),
+    canRpmDisp: document.getElementById('canRpmDisp'),
+    canSpeedDisp: document.getElementById('canSpeedDisp'),
+    canFuelDisp: document.getElementById('canFuelDisp'),
+    canTempDisp: document.getElementById('canTempDisp'),
+    canRateDisp: document.getElementById('canRateDisp'),
+    canStreamArea: document.getElementById('canStreamArea'),
 
     workOrderModal: document.getElementById('workOrderModal'),
     btnCloseWorkOrderModal: document.getElementById('btnCloseWorkOrderModal'),
@@ -343,6 +361,17 @@ import { MemorialParser } from './modules/memorialParser.js';
     }
   });
 
+  const btnMobileSidebarToggle = document.getElementById('btnMobileSidebarToggle');
+  if (btnMobileSidebarToggle) {
+    btnMobileSidebarToggle.addEventListener('click', () => {
+      if (els.sidebar.classList.contains('mobile-open')) {
+        closeMobileSidebar();
+      } else {
+        openMobileSidebar();
+      }
+    });
+  }
+
   if (mobileOverlay) {
     mobileOverlay.addEventListener('click', () => closeMobileSidebar());
   }
@@ -519,30 +548,58 @@ import { MemorialParser } from './modules/memorialParser.js';
     }
   });
 
-  // --- IMPORTAÇÃO DE ARQUIVOS (KML, GeoJSON, JSON) ---
+  // --- IMPORTAÇÃO DE ARQUIVOS (KML, Shapefile .zip/.shp, NHP, GeoJSON, GPX) ---
   els.btnImportFile.addEventListener('click', () => els.fileInput.click());
 
-  els.fileInput.addEventListener('change', e => {
+  els.fileInput.addEventListener('change', async e => {
     const file = e.target.files[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = ev => {
-      try {
-        const text = ev.target.result;
-        let geom = null;
-        if (file.name.toLowerCase().endsWith('.kml')) {
-          geom = GuidanceEngine.parseKMLPolygon(text);
-        } else {
-          const parsed = JSON.parse(text);
-          geom = parsed.geometry ? parsed.geometry : (parsed.type === 'FeatureCollection' ? parsed.features[0].geometry : parsed);
-        }
+
+    const lowerName = file.name.toLowerCase();
+    showToast(`Carregando ${file.name}...`);
+
+    try {
+      let geojsonFeature = null;
+
+      if (lowerName.endsWith('.zip') || lowerName.endsWith('.shp')) {
+        // Importação de Shapefile ESRI (.zip / .shp)
+        const arrayBuffer = await file.arrayBuffer();
+        const res = await ShapefileHandler.parseShapefileZipBuffer(arrayBuffer);
+        const feat = res.type === 'FeatureCollection' ? res.features[0] : res;
+        const geom = feat.geometry || feat;
+        geojsonFeature = { type: 'Feature', properties: { name: file.name }, geometry: geom };
+        showToast('Shapefile ESRI importado com sucesso!');
+      } else if (lowerName.endsWith('.nhp')) {
+        // Importação de NHP (Monitores Topcon/Stara/AgLeader)
+        const text = await file.text();
+        const res = ShapefileHandler.parseNHP(text);
+        const feat = res.type === 'FeatureCollection' ? res.features[0] : res;
+        const geom = feat.geometry || feat;
+        geojsonFeature = { type: 'Feature', properties: { name: file.name }, geometry: geom };
+        showToast('Arquivo NHP de Monitor Agrícola importado!');
+      } else if (lowerName.endsWith('.kml')) {
+        // Importação de KML
+        const text = await file.text();
+        const geom = GuidanceEngine.parseKMLPolygon(text);
+        if (!geom) throw new Error('Polígono KML inválido.');
+        geojsonFeature = { type: 'Feature', properties: { name: file.name }, geometry: geom };
+        showToast('KML importado!');
+      } else {
+        // Importação de GeoJSON / JSON / GPX
+        const text = await file.text();
+        const parsed = JSON.parse(text);
+        const geom = parsed.geometry ? parsed.geometry : (parsed.type === 'FeatureCollection' ? parsed.features[0].geometry : parsed);
         if (!geom) throw new Error('Não foi possível identificar um polígono válido no arquivo.');
-        setPolygon({ type: 'Feature', properties: { name: file.name }, geometry: geom });
-      } catch(err) {
-        alert('Erro ao importar arquivo: ' + err.message);
+        geojsonFeature = { type: 'Feature', properties: { name: file.name }, geometry: geom };
+        showToast('Arquivo GeoJSON importado!');
       }
-    };
-    reader.readAsText(file);
+
+      if (geojsonFeature) {
+        setPolygon(geojsonFeature);
+      }
+    } catch(err) {
+      alert('Erro ao importar arquivo: ' + err.message);
+    }
     e.target.value = '';
   });
 
@@ -1073,13 +1130,52 @@ import { MemorialParser } from './modules/memorialParser.js';
 
   els.btnGenerateLines.addEventListener('click', generatePlantingLines);
 
-  // --- EXPORTAR LINHAS (KML / GPX / GeoJSON) ---
-  els.btnExportPlantingKML.addEventListener('click', () => {
+  // --- EXPORTAR LINHAS (KML / SHP / NHP / GPX / GeoJSON) ---
+  els.btnExportPlantingKML.addEventListener('click', async () => {
     if (state.generatedLines.length === 0) return alert('Gere as linhas de plantio antes de exportar.');
     const fieldName = state.currentFieldMeta ? state.currentFieldMeta.name : 'Talhao_AgroLinhas';
     const fmt = (els.exportFormatSelect && els.exportFormatSelect.value) || 'kml';
 
-    if (fmt === 'gpx') {
+    if (fmt === 'shp') {
+      // Exportar ESRI Shapefile (.shp.zip)
+      try {
+        const features = state.generatedLines.map((seg, i) => ({
+          type: 'Feature',
+          properties: { name: `Passada_${i + 1}` },
+          geometry: { type: 'LineString', coordinates: seg }
+        }));
+        if (state.currentPolygon) {
+          features.unshift({
+            type: 'Feature',
+            properties: { name: `${fieldName}_Limite` },
+            geometry: state.currentPolygon.geometry || state.currentPolygon
+          });
+        }
+        const zipBlob = await ShapefileHandler.exportToShapefileZip(
+          { type: 'FeatureCollection', features },
+          fieldName
+        );
+        const url = URL.createObjectURL(zipBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${fieldName}_shapefile.zip`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast('Pacote Shapefile (.shp.zip) exportado!');
+      } catch(err) {
+        alert('Erro ao exportar Shapefile: ' + err.message);
+      }
+    } else if (fmt === 'nhp') {
+      // Exportar NHP (Topcon / Stara / AgLeader)
+      const nhpText = ShapefileHandler.exportToNHP({
+        plantingSegments: state.generatedLines,
+        guideLineCoords: state.guideLine
+      }, state.currentPolygon, fieldName);
+      downloadFile(nhpText, `${fieldName}_orientacao.nhp`, 'text/plain');
+      showToast('Arquivo NHP de Orientação exportado para Monitores!');
+    } else if (fmt === 'gpx') {
       // Exportar GPX
       let gpxTracks = state.generatedLines.map((seg, i) => {
         const pts = seg.map(c => `<trkpt lat="${c[1].toFixed(8)}" lon="${c[0].toFixed(8)}"></trkpt>`).join('\n        ');
@@ -1934,6 +2030,69 @@ import { MemorialParser } from './modules/memorialParser.js';
     els.rtkSats.textContent = `(${s.satellites} sats)`;
     els.rtkDot.className = `rtk-indicator-dot ${s.fixQuality === 4 ? 'fix' : (s.fixQuality === 5 ? 'float' : 'none')}`;
     els.hudAccuracy.textContent = `±${(s.accuracyMeters * 100).toFixed(0)}cm`;
+  }
+
+  // --- ISOBUS & CAN BUS TELEMETRY CONTROLS ---
+  IsobusCanStation.subscribe(status => {
+    if (els.canRpmDisp) els.canRpmDisp.textContent = status.engineRpm;
+    if (els.canSpeedDisp) els.canSpeedDisp.textContent = `${status.vehicleSpeedKmh} km/h`;
+    if (els.canFuelDisp) els.canFuelDisp.textContent = `${status.fuelRateLh} L/h`;
+    if (els.canTempDisp) els.canTempDisp.textContent = `${status.engineTempC} °C`;
+    if (els.canRateDisp) els.canRateDisp.textContent = `${status.applicationRateLha} L/ha`;
+    if (els.hudRpm) els.hudRpm.textContent = `${status.engineRpm} RPM`;
+    if (els.canStreamArea) els.canStreamArea.value = status.lastFrameHex;
+    if (els.canStatusBadge) {
+      els.canStatusBadge.textContent = status.connected ? `CONECTADO (${status.mode.toUpperCase()})` : 'DESCONECTADO';
+      els.canStatusBadge.style.color = status.connected ? 'var(--accent)' : 'var(--text-muted)';
+      els.canStatusBadge.style.borderColor = status.connected ? 'var(--accent)' : 'var(--border-color)';
+    }
+  });
+
+  if (els.btnConnectCanWs) {
+    els.btnConnectCanWs.addEventListener('click', async () => {
+      const url = (els.canGatewayUrl && els.canGatewayUrl.value.trim()) || 'ws://localhost:8088';
+      showToast(`Conectando ao Gateway CAN em ${url}...`);
+      try {
+        await IsobusCanStation.connectWebSocket(url);
+        showToast('Conectado ao Gateway CAN / ISOBUS via WebSocket!');
+      } catch(err) {
+        alert('Erro ao conectar ao Gateway CAN: ' + err.message);
+      }
+    });
+  }
+
+  if (els.btnConnectCanBt) {
+    els.btnConnectCanBt.addEventListener('click', async () => {
+      try {
+        const name = await IsobusCanStation.connectBluetooth();
+        showToast(`Conectado ao Dongle Bluetooth CAN: ${name}`);
+      } catch(err) {
+        alert('Erro Bluetooth CAN: ' + err.message);
+      }
+    });
+  }
+
+  if (els.btnConnectCanSerial) {
+    els.btnConnectCanSerial.addEventListener('click', async () => {
+      try {
+        await IsobusCanStation.connectSerial();
+        showToast('Conectado ao Adaptador USB Serial CAN!');
+      } catch(err) {
+        alert('Erro Serial CAN: ' + err.message);
+      }
+    });
+  }
+
+  if (els.btnSimulateCan) {
+    els.btnSimulateCan.addEventListener('click', () => {
+      if (IsobusCanStation.status.mode === 'simulated') {
+        IsobusCanStation.disconnect();
+        showToast('Simulação CAN J1939 Parada.');
+      } else {
+        IsobusCanStation.startSimulation();
+        showToast('Simulador ISOBUS / CAN J1939 Ativo em Tempo Real!');
+      }
+    });
   }
 
   // --- CENTRAL DE AJUDA & MANUAL INTERATIVO ---
