@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Projeto de Linhas de Plantio</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+<style>
+  :root{
+    --bg: #F6F4EC;
+    --panel: #FFFFFF;
+    --ink: #22301F;
+    --ink-soft: #5B6154;
+    --green: #2F4A3C;
+    --green-light: #8AA68C;
+    --clay: #B4622B;
+    --amber: #D9A441;
+    --border: #DDD8C8;
+    --danger: #A32D2D;
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg); color: var(--ink);
+  }
+  .app{ display:flex; flex-direction:column; height:100vh; }
+  header{
+    padding: 14px 18px 10px; border-bottom: 1px solid var(--border); background: var(--panel);
+  }
+  header h1{ font-size: 17px; font-weight: 700; margin:0 0 2px; letter-spacing: 0.2px; }
+  header p{ margin:0; font-size: 12.5px; color: var(--ink-soft); }
+  .main{ flex:1; display:flex; min-height:0; flex-wrap: wrap; }
+  #map{ flex: 1 1 60%; min-height: 320px; min-width: 280px; }
+  .panel{
+    flex: 1 1 320px; max-width: 380px; background: var(--panel); border-left: 1px solid var(--border);
+    overflow-y:auto; padding: 16px;
+  }
+  .section{ margin-bottom: 18px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+  .section:last-child{ border-bottom:none; }
+  .section h2{
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--green);
+    font-weight: 700; margin: 0 0 10px;
+  }
+  .row{ display:flex; gap:8px; margin-bottom:8px; }
+  button{
+    font-family: inherit; font-size: 13px; padding: 9px 12px; border-radius: 7px;
+    border: 1px solid var(--border); background: var(--panel); color: var(--ink);
+    cursor:pointer; flex:1;
+  }
+  button:hover{ background:#F1EFE4; }
+  button.primary{ background: var(--green); color:#fff; border-color: var(--green); }
+  button.primary:hover{ background:#25382D; }
+  button.clay{ background: var(--clay); color:#fff; border-color: var(--clay); }
+  button.clay:hover{ background:#984E22; }
+  button:disabled{ opacity:0.45; cursor:not-allowed; }
+  label{ display:block; font-size: 12.5px; color: var(--ink-soft); margin-bottom: 4px; }
+  input[type=number], input[type=range]{
+    width:100%; font-family:inherit; font-size:13px;
+  }
+  input[type=number]{
+    padding: 7px 8px; border-radius:6px; border:1px solid var(--border); background:#fff;
+  }
+  .field{ margin-bottom: 12px; }
+  .hint{ font-size: 11.5px; color: var(--ink-soft); margin-top:4px; line-height:1.4; }
+  .stat-grid{ display:grid; grid-template-columns: 1fr 1fr; gap:8px; }
+  .stat{ background:#F1EFE4; border-radius:7px; padding:8px 10px; }
+  .stat .num{ font-size:16px; font-weight:700; color: var(--green); }
+  .stat .lbl{ font-size:10.5px; color: var(--ink-soft); text-transform:uppercase; letter-spacing:0.4px; }
+  .badge{
+    display:inline-block; font-size:11px; padding:2px 8px; border-radius:20px;
+    background:#F1EFE4; color: var(--ink-soft); margin-left:6px;
+  }
+  .legend{ display:flex; align-items:center; gap:6px; font-size:12px; margin-bottom:4px; }
+  .swatch{ width:14px; height:3px; border-radius:2px; }
+  .notice{
+    font-size: 11.5px; background: #FBF3E6; border: 1px solid #EEDCB8; color: #6E4E1D;
+    padding: 8px 10px; border-radius: 7px; line-height:1.5;
+  }
+  #fileInput{ display:none; }
+  .file-btn{ text-align:center; }
+  .toggle{ display:flex; border:1px solid var(--border); border-radius:7px; overflow:hidden; margin-bottom:10px; }
+  .toggle button{ flex:1; border:none; border-radius:0; background:#fff; }
+  .toggle button.active{ background: var(--green); color:#fff; }
+  .toggle button:hover{ background:#F1EFE4; }
+  .toggle button.active:hover{ background:#25382D; }
+  #abStatus{ font-size:12px; color: var(--ink-soft); margin-bottom:8px; }
+  #abStatus.ready{ color: var(--green); font-weight:600; }
+  #profileChart{ width:100%; height:70px; display:block; }
+  .field-list{ display:flex; flex-direction:column; gap:6px; margin-top:10px; }
+  .field-item{
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    padding:7px 9px; border:1px solid var(--border); border-radius:7px; font-size:12.5px; cursor:pointer;
+  }
+  .field-item:hover{ background:#F1EFE4; }
+  .field-item .fname{ font-weight:600; }
+  .field-item .fmeta{ color: var(--ink-soft); font-size:11px; }
+  .field-item .fdel{ color: var(--danger); font-size:11px; cursor:pointer; padding:2px 4px; }
+  .inline-row{ display:flex; gap:8px; }
+  .inline-row input[type=text]{
+    flex:1; font-family:inherit; font-size:13px; padding:7px 8px; border-radius:6px; border:1px solid var(--border);
+  }
+  @media (max-width: 720px){
+    .main{ flex-direction:column; }
+    #map{ height: 45vh; flex: none; }
+    .panel{ max-width:none; border-left:none; border-top:1px solid var(--border); }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>Projeto de linhas de plantio</h1>
+    <p>Desenhe ou importe a área, gere linhas seguindo o relevo do terreno</p>
+  </header>
+  <div class="main">
+    <div id="map"></div>
+    <div class="panel">
+
+      <div class="section">
+        <h2>1. Área</h2>
+        <div class="row">
+          <button id="btnDraw">Desenhar no mapa</button>
+          <button id="btnImport">Importar arquivo</button>
+        </div>
+        <input type="file" id="fileInput" accept=".geojson,.json,.kml" />
+        <div class="hint">Aceita GeoJSON (.geojson/.json) ou KML (.kml) com um polígono.</div>
+        <div id="areaStat" style="margin-top:10px;"></div>
+      </div>
+
+      <div class="section">
+        <h2>2. Linha-guia</h2>
+        <div class="toggle">
+          <button id="modeContour" class="active">Curva de nível</button>
+          <button id="modeAB">Reta (AB)</button>
+        </div>
+        <div id="contourControls" class="field">
+          <label for="percentile">Referência de elevação (0 = ponto mais baixo, 100 = mais alto)</label>
+          <input type="range" id="percentile" min="0" max="100" value="50" />
+          <div class="hint" id="percentileOut">50%</div>
+        </div>
+        <div id="abControls" style="display:none;">
+          <div class="hint" style="margin-bottom:8px;">Igual ao modo AB do AgriBus-NAVI: marque dois pontos no talhão e o sistema traça uma linha reta entre eles como referência.</div>
+          <button id="btnSetAB" style="width:100%;">Marcar pontos A e B no mapa</button>
+          <div id="abStatus" style="margin-top:6px;">Nenhum ponto marcado</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>3. Parâmetros</h2>
+        <div class="field">
+          <label for="spacing">Espaçamento entre linhas (metros)</label>
+          <input type="number" id="spacing" value="20" min="1" step="1" />
+        </div>
+        <button id="btnGenerate" class="primary" disabled>Gerar linhas de plantio</button>
+      </div>
+
+      <div class="section" id="resultsSection" style="display:none;">
+        <h2>4. Resultado</h2>
+        <div class="stat-grid">
+          <div class="stat"><div class="num" id="statLines">–</div><div class="lbl">Linhas</div></div>
+          <div class="stat"><div class="num" id="statLength">–</div><div class="lbl">Km totais</div></div>
+        </div>
+        <div style="margin-top:12px;">
+          <div class="legend"><span class="swatch" style="background:#D9A441;"></span> Linha-guia</div>
+          <div class="legend"><span class="swatch" style="background:#2F4A3C;"></span> Linhas de plantio</div>
+        </div>
+        <div style="margin-top:12px;">
+          <label style="margin-bottom:2px;">Perfil de elevação ao longo da linha-guia</label>
+          <canvas id="profileChart" width="320" height="70"></canvas>
+        </div>
+        <button id="btnExport" class="clay" style="width:100%; margin-top:12px;">Baixar KML</button>
+        <div class="hint" style="margin-top:6px;">O KML exportado também pode ser importado em apps de orientação de campo (ex: AgriBus-NAVI/AgriBus-Web) pra guiar o trator pelas linhas em tempo real.</div>
+      </div>
+
+      <div class="section">
+        <h2>5. Talhões salvos <span class="badge" id="fieldCount">0</span></h2>
+        <div class="inline-row">
+          <input type="text" id="fieldName" placeholder="Nome do talhão" />
+          <button id="btnSaveField">Salvar</button>
+        </div>
+        <div class="hint">Salvo só nesta sessão (fecha se a página recarregar) — no sistema final isso ficaria salvo na nuvem, por talhão/cliente.</div>
+        <div class="field-list" id="fieldList"></div>
+      </div>
+
+      <div class="section">
+        <div class="notice">
+          <strong>Protótipo:</strong> a elevação do terreno usada aqui é gerada de forma sintética (simulada), só para validar os algoritmos de linha-guia e offset. Numa versão de produção, isso seria substituído por dados reais de MDT/SRTM ou levantamento topográfico do talhão.
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Turf.js/6.5.0/turf.min.js"></script>
+<script>
+(function(){
+
+var map = L.map('map', { zoomControl: true }).setView([-12.5, -55.7], 6);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19, attribution: '&copy; OpenStreetMap'
+}).addTo(map);
+
+var drawnItems = new L.FeatureGroup();
+map.addLayer(drawnItems);
+
+var linesLayer = L.layerGroup().addTo(map);
+var guideLayer = L.layerGroup().addTo(map);
+
+var drawControl = new L.Control.Draw({
+  edit: { featureGroup: drawnItems, remove: false },
+  draw: {
+    polygon: { allowIntersection:false, showArea:true, shapeOptions:{ color:'#2F4A3C', weight:2 } },
+    marker:false, circle:false, circlemarker:false, rectangle:false, polyline:false
+  }
+});
+
+var currentPolygonGeoJSON = null;
+var lastResult = null;
+var guideMode = 'contour';
+var abPoints = [];
+var abMarkers = L.layerGroup().addTo(map);
+var abPickingActive = false;
+var savedFields = [];
+
+function setPolygon(geojsonPolygon){
+  drawnItems.clearLayers();
+  linesLayer.clearLayers();
+  guideLayer.clearLayers();
+  abMarkers.clearLayers();
+  abPoints = [];
+  updateAbStatus();
+  document.getElementById('resultsSection').style.display = 'none';
+  currentPolygonGeoJSON = geojsonPolygon;
+  var layer = L.geoJSON(geojsonPolygon, { style:{ color:'#2F4A3C', weight:2, fillOpacity:0.08 } });
+  layer.eachLayer(function(l){ drawnItems.addLayer(l); });
+  try{ map.fitBounds(layer.getBounds(), { padding:[30,30] }); }catch(e){}
+  updateAreaStat();
+  document.getElementById('btnGenerate').disabled = false;
+}
+
+function updateAreaStat(){
+  var el = document.getElementById('areaStat');
+  if(!currentPolygonGeoJSON){ el.innerHTML=''; return; }
+  var areaM2 = turf.area(currentPolygonGeoJSON);
+  var ha = areaM2/10000;
+  el.innerHTML = '<span class="badge">' + ha.toFixed(2) + ' ha</span>';
+}
+
+document.getElementById('btnDraw').addEventListener('click', function(){
+  map.addControl(drawControl);
+  new L.Draw.Polygon(map, drawControl.options.draw.polygon).enable();
+});
+
+map.on(L.Draw.Event.CREATED, function(e){
+  var layer = e.layer;
+  var gj = layer.toGeoJSON();
+  map.removeControl(drawControl);
+  setPolygon(gj.geometry ? gj : gj.geometry);
+});
+
+document.getElementById('btnImport').addEventListener('click', function(){
+  document.getElementById('fileInput').click();
+});
+
+document.getElementById('fileInput').addEventListener('change', function(e){
+  var file = e.target.files[0];
+  if(!file) return;
+  var reader = new FileReader();
+  reader.onload = function(ev){
+    try{
+      var text = ev.target.result;
+      var geom = null;
+      if(file.name.toLowerCase().endsWith('.kml')){
+        geom = parseKMLPolygon(text);
+      } else {
+        var parsed = JSON.parse(text);
+        geom = extractPolygonFromGeoJSON(parsed);
+      }
+      if(!geom){ alert('Não encontrei um polígono válido nesse arquivo.'); return; }
+      setPolygon({ type:'Feature', properties:{}, geometry: geom });
+    }catch(err){
+      alert('Erro ao ler o arquivo: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+
+function extractPolygonFromGeoJSON(obj){
+  if(obj.type === 'Feature' && obj.geometry) return obj.geometry;
+  if(obj.type === 'FeatureCollection'){
+    for(var i=0;i<obj.features.length;i++){
+      var f = obj.features[i];
+      if(f.geometry && (f.geometry.type==='Polygon'||f.geometry.type==='MultiPolygon')) return f.geometry;
+    }
+  }
+  if(obj.type === 'Polygon' || obj.type === 'MultiPolygon') return obj;
+  return null;
+}
+
+function parseKMLPolygon(text){
+  var parser = new DOMParser();
+  var xml = parser.parseFromString(text, 'text/xml');
+  var coordNodes = xml.getElementsByTagName('coordinates');
+  if(coordNodes.length === 0) return null;
+  var raw = coordNodes[0].textContent.trim();
+  var pts = raw.split(/\s+/).map(function(p){
+    var parts = p.split(',');
+    return [parseFloat(parts[0]), parseFloat(parts[1])];
+  }).filter(function(p){ return !isNaN(p[0]) && !isNaN(p[1]); });
+  if(pts.length < 3) return null;
+  var first = pts[0], last = pts[pts.length-1];
+  if(first[0]!==last[0] || first[1]!==last[1]) pts.push(first);
+  return { type:'Polygon', coordinates:[pts] };
+}
+
+function hashSeed(str){
+  var h = 0;
+  for(var i=0;i<str.length;i++){ h = (Math.imul(31,h) + str.charCodeAt(i))|0; }
+  return (h % 1000) / 1000 * Math.PI * 2;
+}
+
+function elevAt(lon, lat, seed){
+  var e = 0;
+  e += Math.sin(lat*90 + seed) * 10;
+  e += Math.cos(lon*70 - seed*1.3) * 8;
+  e += Math.sin((lat*55 + lon*45) + seed*0.7) * 6;
+  e += Math.sin(lat*210 + lon*160 + seed*2) * 2;
+  return e;
+}
+
+function generateLines(){
+  if(!currentPolygonGeoJSON) return;
+  linesLayer.clearLayers();
+  guideLayer.clearLayers();
+
+  var poly = currentPolygonGeoJSON;
+  var bbox = turf.bbox(poly);
+  var minX=bbox[0], minY=bbox[1], maxX=bbox[2], maxY=bbox[3];
+  var seed = hashSeed(minX.toFixed(4)+','+minY.toFixed(4)+','+maxX.toFixed(4));
+
+  var baseCoords, baseLine;
+
+  if(guideMode === 'ab'){
+    if(abPoints.length < 2){ alert('Marque os pontos A e B no mapa antes de gerar as linhas.'); return; }
+    var a = abPoints[0], b = abPoints[1];
+    var bearing = turf.bearing(turf.point(a), turf.point(b));
+    var diagAB = turf.distance(turf.point([minX,minY]), turf.point([maxX,maxY]), {units:'meters'});
+    var extend = diagAB;
+    var p1 = turf.destination(turf.point(a), extend/1000, bearing+180, {units:'kilometers'});
+    var p2 = turf.destination(turf.point(b), extend/1000, bearing, {units:'kilometers'});
+    baseCoords = [p1.geometry.coordinates, p2.geometry.coordinates];
+    baseLine = turf.lineString(baseCoords);
+  } else {
+    var nx = 60, ny = 60;
+    var values = new Array(nx*ny);
+    var minV=Infinity, maxV=-Infinity;
+    for(var y=0;y<ny;y++){
+      for(var x=0;x<nx;x++){
+        var lon = minX + (x/(nx-1))*(maxX-minX);
+        var lat = minY + (y/(ny-1))*(maxY-minY);
+        var v = elevAt(lon, lat, seed);
+        values[x + y*nx] = v;
+        if(v<minV) minV=v;
+        if(v>maxV) maxV=v;
+      }
+    }
+    var percentile = parseFloat(document.getElementById('percentile').value)/100;
+    var target = minV + (maxV-minV)*percentile;
+
+    var gridToLonLat = function(gx, gy){
+      return [ minX + (gx/(nx-1))*(maxX-minX), minY + (gy/(ny-1))*(maxY-minY) ];
+    };
+
+    var contourGen = d3.contours().size([nx,ny]).thresholds([target]);
+    var contourResult = contourGen(values);
+    if(!contourResult.length){ alert('Não foi possível gerar curva de nível com esses parâmetros. Tente outro percentil.'); return; }
+
+    var bestRing = null, bestLen = 0;
+    contourResult[0].coordinates.forEach(function(polygonRings){
+      var ring = polygonRings[0];
+      if(ring.length > bestLen){ bestLen = ring.length; bestRing = ring; }
+    });
+    if(!bestRing){ alert('Não encontrei uma linha de contorno utilizável.'); return; }
+
+    baseCoords = bestRing.map(function(p){ return gridToLonLat(p[0], p[1]); });
+    baseLine = turf.lineString(baseCoords);
+  }
+
+  var spacing = parseFloat(document.getElementById('spacing').value) || 20;
+  var polyBbox = turf.bbox(poly);
+  var diag = turf.distance(turf.point([polyBbox[0],polyBbox[1]]), turf.point([polyBbox[2],polyBbox[3]]), {units:'meters'});
+  var maxSteps = Math.min(150, Math.ceil((diag/2)/spacing) + 2);
+
+  var allSegments = [];
+  var totalLenM = 0;
+
+  function clipAndPush(line){
+    var coords = line.geometry.coordinates;
+    var run = [];
+    for(var i=0;i<coords.length;i++){
+      var inside = false;
+      try{ inside = turf.booleanPointInPolygon(turf.point(coords[i]), poly); }catch(e){ inside=false; }
+      if(inside){ run.push(coords[i]); }
+      else{
+        if(run.length>=2){ allSegments.push(run); }
+        run = [];
+      }
+    }
+    if(run.length>=2){ allSegments.push(run); }
+  }
+
+  clipAndPush(baseLine);
+
+  for(var dir=-1; dir<=1; dir+=2){
+    for(var k=1;k<=maxSteps;k++){
+      var dist = dir*k*spacing;
+      var offset;
+      try{ offset = turf.lineOffset(baseLine, dist, {units:'meters'}); }
+      catch(e){ break; }
+      var obbox = turf.bbox(offset);
+      var noOverlap = obbox[2]<polyBbox[0] || obbox[0]>polyBbox[2] || obbox[3]<polyBbox[1] || obbox[1]>polyBbox[3];
+      if(noOverlap) break;
+      clipAndPush(offset);
+    }
+  }
+
+  allSegments.forEach(function(seg){
+    var ls = turf.lineString(seg);
+    totalLenM += turf.length(ls, {units:'meters'});
+    L.polyline(seg.map(function(c){return [c[1],c[0]];}), { color:'#2F4A3C', weight:2, opacity:0.85 }).addTo(linesLayer);
+  });
+
+  L.polyline(baseCoords.map(function(c){return [c[1],c[0]];}).filter(function(c){
+    return true;
+  }), { color:'#D9A441', weight:3, opacity:0.9, dashArray:'6,4' }).addTo(guideLayer);
+
+  lastResult = { segments: allSegments, guide: baseCoords };
+
+  document.getElementById('statLines').textContent = allSegments.length;
+  document.getElementById('statLength').textContent = (totalLenM/1000).toFixed(2);
+  document.getElementById('resultsSection').style.display = 'block';
+  drawElevationProfile(baseCoords, seed);
+}
+
+document.getElementById('percentile').addEventListener('input', function(){
+  document.getElementById('percentileOut').textContent = this.value + '%';
+});
+
+document.getElementById('modeContour').addEventListener('click', function(){
+  guideMode = 'contour';
+  this.classList.add('active');
+  document.getElementById('modeAB').classList.remove('active');
+  document.getElementById('contourControls').style.display = 'block';
+  document.getElementById('abControls').style.display = 'none';
+});
+
+document.getElementById('modeAB').addEventListener('click', function(){
+  guideMode = 'ab';
+  this.classList.add('active');
+  document.getElementById('modeContour').classList.remove('active');
+  document.getElementById('contourControls').style.display = 'none';
+  document.getElementById('abControls').style.display = 'block';
+});
+
+function updateAbStatus(){
+  var el = document.getElementById('abStatus');
+  if(abPoints.length===0){ el.textContent = 'Nenhum ponto marcado'; el.classList.remove('ready'); }
+  else if(abPoints.length===1){ el.textContent = 'Ponto A marcado — clique no mapa para marcar B'; el.classList.remove('ready'); }
+  else{ el.textContent = 'Pontos A e B marcados'; el.classList.add('ready'); }
+}
+
+document.getElementById('btnSetAB').addEventListener('click', function(){
+  if(!currentPolygonGeoJSON){ alert('Defina a área do talhão primeiro.'); return; }
+  abMarkers.clearLayers();
+  abPoints = [];
+  updateAbStatus();
+  abPickingActive = true;
+  this.textContent = 'Clique no mapa: marque o ponto A';
+});
+
+map.on('click', function(e){
+  if(!abPickingActive) return;
+  var label = abPoints.length===0 ? 'A' : 'B';
+  var marker = L.circleMarker(e.latlng, { radius:6, color:'#B4622B', weight:2, fillColor:'#B4622B', fillOpacity:1 }).addTo(abMarkers);
+  marker.bindTooltip(label, { permanent:true, direction:'top', offset:[0,-6] }).openTooltip();
+  abPoints.push([e.latlng.lng, e.latlng.lat]);
+  updateAbStatus();
+  if(abPoints.length>=2){
+    abPickingActive = false;
+    document.getElementById('btnSetAB').textContent = 'Marcar pontos A e B no mapa';
+  }
+});
+
+function drawElevationProfile(coords, seed){
+  var canvas = document.getElementById('profileChart');
+  var ctx = canvas.getContext('2d');
+  var w = canvas.width, h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+  if(!coords.length){ return; }
+  var n = Math.min(80, coords.length);
+  var elevs = [];
+  for(var i=0;i<n;i++){
+    var idx = Math.floor(i*(coords.length-1)/(n-1||1));
+    var c = coords[idx];
+    elevs.push(elevAt(c[0], c[1], seed));
+  }
+  var minE = Math.min.apply(null, elevs), maxE = Math.max.apply(null, elevs);
+  var range = (maxE-minE) || 1;
+  ctx.strokeStyle = '#2F4A3C';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  elevs.forEach(function(e, i){
+    var x = (i/(elevs.length-1||1)) * (w-4) + 2;
+    var y = h - 4 - ((e-minE)/range) * (h-8);
+    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+}
+
+function fieldAreaHa(gj){
+  try{ return turf.area(gj)/10000; }catch(e){ return 0; }
+}
+
+function renderFieldList(){
+  var list = document.getElementById('fieldList');
+  document.getElementById('fieldCount').textContent = savedFields.length;
+  list.innerHTML = '';
+  savedFields.forEach(function(f, i){
+    var item = document.createElement('div');
+    item.className = 'field-item';
+    item.innerHTML = '<div><div class="fname"></div><div class="fmeta"></div></div><div class="fdel">remover</div>';
+    item.querySelector('.fname').textContent = f.name;
+    item.querySelector('.fmeta').textContent = f.ha.toFixed(2) + ' ha · ' + f.spacing + ' m';
+    item.addEventListener('click', function(ev){
+      if(ev.target.classList.contains('fdel')) return;
+      loadField(i);
+    });
+    item.querySelector('.fdel').addEventListener('click', function(ev){
+      ev.stopPropagation();
+      savedFields.splice(i,1);
+      renderFieldList();
+    });
+    list.appendChild(item);
+  });
+}
+
+function loadField(i){
+  var f = savedFields[i];
+  setPolygon(f.geojson);
+  document.getElementById('spacing').value = f.spacing;
+  document.getElementById('percentile').value = f.percentile;
+  document.getElementById('percentileOut').textContent = f.percentile + '%';
+}
+
+document.getElementById('btnSaveField').addEventListener('click', function(){
+  if(!currentPolygonGeoJSON){ alert('Defina a área do talhão primeiro.'); return; }
+  var nameInput = document.getElementById('fieldName');
+  var name = nameInput.value.trim() || ('Talhão ' + (savedFields.length+1));
+  savedFields.push({
+    name: name,
+    geojson: currentPolygonGeoJSON,
+    ha: fieldAreaHa(currentPolygonGeoJSON),
+    spacing: document.getElementById('spacing').value,
+    percentile: document.getElementById('percentile').value
+  });
+  nameInput.value = '';
+  renderFieldList();
+});
+
+document.getElementById('btnGenerate').addEventListener('click', generateLines);
+
+document.getElementById('btnExport').addEventListener('click', function(){
+  if(!lastResult) return;
+  var kml = '<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2"><Document>\n';
+  kml += '<name>Linhas de plantio</name>\n';
+  kml += '<Style id="guide"><LineStyle><color>ff41a4d9</color><width>3</width></LineStyle></Style>\n';
+  kml += '<Style id="plant"><LineStyle><color>ff3c4a2f</color><width>2</width></LineStyle></Style>\n';
+  kml += '<Placemark><name>Linha-guia</name><styleUrl>#guide</styleUrl><LineString><coordinates>';
+  kml += lastResult.guide.map(function(c){ return c[0]+','+c[1]+',0'; }).join(' ');
+  kml += '</coordinates></LineString></Placemark>\n';
+  lastResult.segments.forEach(function(seg, i){
+    kml += '<Placemark><name>Linha ' + (i+1) + '</name><styleUrl>#plant</styleUrl><LineString><coordinates>';
+    kml += seg.map(function(c){ return c[0]+','+c[1]+',0'; }).join(' ');
+    kml += '</coordinates></LineString></Placemark>\n';
+  });
+  kml += '</Document></kml>';
+  var blob = new Blob([kml], {type:'application/vnd.google-earth.kml+xml'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = 'linhas_de_plantio.kml';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#121b15" />
+  <title>AgroLinhas Pro - Software de Agricultura de Precisão & Piloto Agrícola</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='100' fill='%232F4A3C'/%3E%3Cpath d='M256 90 L380 420 L256 360 L132 420 Z' fill='%238AA68C' stroke='%23D9A441' stroke-width='16'/%3E%3Ccircle cx='256' cy='256' r='30' fill='%23D9A441'/%3E%3C/svg%3E" />
+  <link rel="manifest" href="manifest.json" />
+
+  <!-- Dependências Externas (CSS) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+  <!-- Design System do Software Web -->
+  <link rel="stylesheet" href="css/app.css" />
+
+  <!-- Dependências para Importação de Memoriais Descritivos (PDF/TXT) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  </script>
+</head>
+<body>
+
+<!-- Mobile sidebar backdrop overlay -->
+<div id="mobileOverlay"></div>
+
+<div id="app-container">
+
+  <!-- ========================================================================
+       SIDEBAR / BARRA LATERAL ENTERPRISE
+       ======================================================================== -->
+  <aside id="app-sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-logo-group">
+        <div class="brand-icon">
+          <i class="fa-solid fa-tractor"></i>
+        </div>
+        <div>
+          <span class="brand-text">AgroLinhas</span>
+          <span class="brand-badge">PRO</span>
+        </div>
+      </div>
+      <button class="sidebar-toggle-btn" id="btnToggleSidebar" title="Recolher / Expandir Menu">
+        <i class="fa-solid fa-bars-staggered"></i>
+      </button>
+    </div>
+
+    <!-- Navegação de Módulos -->
+    <nav class="sidebar-nav">
+      <div class="nav-section-title">Operação & Campo</div>
+      
+      <div class="nav-item active" data-view="gis">
+        <i class="fa-solid fa-map-location-dot nav-item-icon"></i>
+        <span class="nav-item-label">1. Estação GIS</span>
+      </div>
+
+      <div class="nav-item" data-view="cabin">
+        <i class="fa-solid fa-gauge-high nav-item-icon"></i>
+        <span class="nav-item-label">2. Piloto Cabine HUD</span>
+      </div>
+
+      <div class="nav-section-title">Operação & Máquinas</div>
+
+      <div class="nav-item" data-view="fleet">
+        <i class="fa-solid fa-tractor nav-item-icon"></i>
+        <span class="nav-item-label">4. Banco de Equipamentos</span>
+      </div>
+
+      <div class="nav-section-title">Hardware & Sensores</div>
+
+      <div class="nav-item" data-view="rtk">
+        <i class="fa-solid fa-satellite-dish nav-item-icon"></i>
+        <span class="nav-item-label">3. Estação GNSS / RTK</span>
+      </div>
+
+      <div class="nav-section-title">Ajuda & Documentação</div>
+
+      <div class="nav-item" id="navItemHelp" style="cursor:pointer;" title="Abrir Central de Ajuda & Manual">
+        <i class="fa-solid fa-circle-question nav-item-icon" style="color:var(--gold);"></i>
+        <span class="nav-item-label" style="font-weight:700; color:var(--gold);">Central de Ajuda</span>
+      </div>
+
+      <a href="manual.html" target="_blank" class="nav-item" style="text-decoration:none;" title="Baixar / Imprimir Versão em PDF">
+        <i class="fa-solid fa-file-pdf nav-item-icon" style="color:#e74c3c;"></i>
+        <span class="nav-item-label">Manual em PDF</span>
+      </a>
+    </nav>
+
+    <!-- Selo de Autoria & Copyright SSTecnol -->
+    <div class="sidebar-copyright-box" title="SSTecnol 2026 • Selo de Autoria & Autenticidade Digital">
+      <div class="sstecnol-badge-row">
+        <img src="img/sstecnol-logo.png" alt="SSTecnol 2026 - Selo de Autoria" class="sstecnol-logo-img" />
+        <div class="sstecnol-text-block">
+          <div class="copyright-title">© 2026 SSTecnol</div>
+          <div class="copyright-subtitle">Desenvolvido por SSTecnol</div>
+          <div class="copyright-auth">Autoria & Autenticidade Digital</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rodapé da Barra Lateral -->
+    <div class="sidebar-footer">
+      <div style="font-size:11px; color:var(--text-muted);">
+        <span>v2.5.0 SaaS</span>
+      </div>
+      <div style="display:flex; gap:6px;">
+        <span class="brand-badge" style="background:var(--accent);">ONLINE</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ========================================================================
+       ÁREA PRINCIPAL DE TRABALHO (TOPBAR + VIEWS)
+       ======================================================================== -->
+  <main id="app-main">
+    
+    <!-- TOPBAR SUPERIOR -->
+    <header id="app-topbar">
+      <div class="topbar-left">
+        <div class="view-title-group">
+          <span class="view-title" id="currentViewTitle">Estação Cartográfica GIS</span>
+          <span class="view-subtitle" id="currentViewSubtitle">Planejamento e Traçado de Linhas de Plantio</span>
+        </div>
+      </div>
+
+      <!-- Telemetria Central -->
+      <div class="topbar-center">
+        <div class="telemetry-pill" id="rtkPill" title="Clique para configurar antena GNSS/RTK">
+          <div class="rtk-indicator-dot fix" id="rtkDot"></div>
+          <span id="rtkLabel" style="color:var(--accent); font-weight:700;">RTK FIX</span>
+          <span id="rtkSats" style="color:var(--text-muted); font-size:11px;">(19 sats)</span>
+        </div>
+      </div>
+
+      <!-- Ações do Topo -->
+      <div class="topbar-right">
+        <button class="btn btn-gold" id="btnOpenHelpModal" style="font-size:12px; padding:6px 14px; display:flex; align-items:center; gap:6px;" title="Abrir Central de Ajuda & Manual">
+          <i class="fa-solid fa-circle-question"></i> <span>Ajuda / Manual</span>
+        </button>
+        <button class="top-action-btn" id="btnThemeToggle" title="Alternar Tema Claro / Noturno">
+          <i class="fa-solid fa-moon"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- ======================================================================
+         VIEW 1: ESTAÇÃO CARTOGRÁFICA GIS (MAPA & TRAÇADO)
+         ====================================================================== -->
+    <section class="view-container active" id="view-gis">
+      
+      <!-- MAP CANVAS & FLOATING ZONING TOOLBAR -->
+      <div id="map-workspace">
+        <div id="map"></div>
+
+        <!-- ✂️ BARRA FLUTUANTE DE DELIMITAÇÃO INTUITIVA NO MAPA -->
+        <div class="map-zoning-toolbar" id="mapZoningToolbar">
+          <div class="zoning-tool-group">
+            <button class="zoning-btn" id="btnQuickCut" title="Traçar Linha de Corte no Talhão">
+              <i class="fa-solid fa-scissors"></i> <span>Cortar Linha</span>
+            </button>
+            <button class="zoning-btn" id="btnQuickHole" title="Recortar Área de Mata ou APP Interna">
+              <i class="fa-solid fa-tree"></i> <span>Recortar APP Interna</span>
+            </button>
+            <button class="zoning-btn" id="btnQuickInvert" title="Inverter Seleção (Lavoura x APP)">
+              <i class="fa-solid fa-right-left"></i> <span>Inverter</span>
+            </button>
+            <button class="zoning-btn" id="btnQuickReset" title="Restaurar Talhão Original">
+              <i class="fa-solid fa-rotate-left"></i> <span>Restaurar</span>
+            </button>
+          </div>
+
+          <div class="zoning-hud-badge" id="zoningHudBadge">
+            <div class="hud-open-val" id="zoningOpenHa"><i class="fa-solid fa-seedling"></i> 0.00 ha Úteis (100%)</div>
+            <div class="hud-closed-val" id="zoningClosedHa"><i class="fa-solid fa-tree"></i> 0.00 ha APP/Reserva</div>
+          </div>
+
+          <button class="zoning-btn confirm" id="btnQuickConfirm" title="Confirmar e Aplicar Área de Plantio">
+            <i class="fa-solid fa-check-double"></i> <span>Aplicar no Plantio</span>
+          </button>
+        </div>
+
+        <!-- 🔍 GOOGLE EARTH SEARCH FLYOUT BAR -->
+        <div class="ge-search-bar" id="geSearchBar" style="display:none;">
+          <i class="fa-solid fa-magnifying-glass ge-search-icon"></i>
+          <input type="text" id="geSearchInput" class="ge-search-input" placeholder="Buscar localidade ou coordenadas (ex: -12.805, -55.503 ou Sorriso, MT)..." />
+          <button class="ge-search-btn" id="btnGeDoSearch" title="Voar para localidade"><i class="fa-solid fa-arrow-right"></i></button>
+          <button class="ge-search-close" id="btnGeCloseSearch" title="Fechar busca">&times;</button>
+        </div>
+
+        <!-- 🌍 GOOGLE EARTH STYLE NAVIGATION & ZOOM CONTROLLER -->
+        <div class="ge-nav-controller" id="geNavController">
+          <!-- Bússola / Indicador Norte estilo Google Earth -->
+          <div class="ge-compass-btn" id="btnGeCompass" title="Orientar para o Norte">
+            <div class="ge-compass-ring">
+              <span class="ge-compass-n">N</span>
+              <div class="ge-compass-needle" id="geCompassNeedle"></div>
+            </div>
+          </div>
+
+          <!-- Botão Lupa de Busca -->
+          <button class="ge-tool-btn" id="btnGeSearch" title="Pesquisar local ou coordenadas (Lupa)">
+            <i class="fa-solid fa-magnifying-glass"></i>
+          </button>
+
+          <!-- Bloco de Zoom Vertical Google Earth (+ / Slider / -) -->
+          <div class="ge-zoom-pillar">
+            <button class="ge-zoom-btn" id="btnGeZoomIn" title="Aproximar (+)">
+              <i class="fa-solid fa-plus"></i>
+            </button>
+            <div class="ge-zoom-track">
+              <input type="range" class="ge-zoom-slider" id="geZoomSlider" min="2" max="19" value="14" step="1" />
+            </div>
+            <button class="ge-zoom-btn" id="btnGeZoomOut" title="Afastar (-)">
+              <i class="fa-solid fa-minus"></i>
+            </button>
+          </div>
+
+          <!-- Botão Enquadrar Talhão -->
+          <button class="ge-tool-btn" id="btnGeFit" title="Enquadrar Talhão no Mapa">
+            <i class="fa-solid fa-expand"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- FLOATING WORKSTATION DOCK -->
+      <div class="gis-floating-panel" id="gisPanel">
+        <button class="gis-panel-handle" id="btnGisPanelHandle" title="Expandir / Recolher painel">
+          <i class="fa-solid fa-grip-lines"></i>
+        </button>
+        <div class="panel-header-bar">
+          <span class="panel-header-title">
+            <i class="fa-solid fa-route"></i> Estação de Traçado
+          </span>
+          <span class="brand-badge" id="gisFieldAreaBadge" style="background:var(--accent);">0.00 ha</span>
+        </div>
+
+        <div class="panel-body-scroll">
+          
+          <!-- 1. GESTÃO DO TALHÃO -->
+          <div class="card">
+            <div class="card-title">1. Área do Talhão</div>
+            <div class="btn-grid">
+              <button class="btn" id="btnDrawPoly">
+                <i class="fa-solid fa-pen-nib"></i> Desenhar
+              </button>
+              <button class="btn" id="btnImportFile">
+                <i class="fa-solid fa-file-import"></i> Importar KML
+              </button>
+            </div>
+            <div style="margin-top: 8px;">
+              <button class="btn btn-gold" id="btnImportMemorial" style="width: 100%;">
+                <i class="fa-solid fa-file-pdf"></i> Importar Memorial Descritivo (PDF/TXT)
+              </button>
+            </div>
+            <input type="file" id="fileInput" accept=".kml,.geojson,.json" style="display:none;" />
+            <input type="file" id="memorialInput" accept=".pdf,.txt" style="display:none;" />
+          </div>
+
+          <!-- 2. ✂️ DELIMITAÇÃO & ZONEAMENTO (ÁREAS ABERTAS X FECHADAS) -->
+          <div class="card" id="cutSectionCard" style="margin-top:6px;">
+            <div class="card-title" style="display:flex; justify-content:space-between; align-items:center;">
+              <span><i class="fa-solid fa-scissors"></i> 2. Delimitação & Zoneamento</span>
+            </div>
+            <div style="font-size:11px; color:var(--text-muted); margin-bottom:6px;">
+              Separe áreas de plantio (abertas) de áreas de APP/reserva (fechadas). Clique direto nas partes do mapa para alternar.
+            </div>
+            <div class="btn-grid">
+              <button class="btn" id="btnCutLine" title="Desenhar linha que cruza o talhão">
+                <i class="fa-solid fa-pen-ruler"></i> Cortar Linha
+              </button>
+              <button class="btn btn-gold" id="btnCutHole" title="Desenhar polígono de mata interna">
+                <i class="fa-solid fa-tree"></i> Recortar APP Interna
+              </button>
+            </div>
+            <div class="btn-grid" style="margin-top:4px;">
+              <button class="btn btn-outline" id="btnInvertTags" style="font-size:11px; padding:5px;">
+                <i class="fa-solid fa-right-left"></i> Inverter Seleção
+              </button>
+              <button class="btn btn-outline" id="btnCutReset" style="font-size:11px; padding:5px;">
+                <i class="fa-solid fa-rotate-left"></i> Limpar Cortes
+              </button>
+            </div>
+            <div id="cutPartsList" class="cut-parts-list" style="margin-top:8px;"></div>
+            <div style="display:flex; flex-direction:column; gap:6px; margin-top:8px;">
+              <button class="btn btn-primary" id="btnUseOpenParts" style="font-size:12px;" disabled>
+                <i class="fa-solid fa-check-double"></i> Usar Apenas Áreas Abertas
+              </button>
+              <button class="btn btn-outline" id="btnExportOpenKML" style="font-size:12px;" disabled>
+                <i class="fa-solid fa-file-arrow-down"></i> Baixar KML Área Aberta
+              </button>
+            </div>
+          </div>
+
+          <!-- 3. CONFIGURAÇÃO DE LINHAS DE PLANTIO -->
+          <div class="card" style="margin-top:6px;">
+            <div class="card-title" style="display:flex; justify-content:space-between; align-items:center;">
+              <span>3. Padrão de Linhas</span>
+              <span id="activeMachineBadge" style="font-size:10px; text-transform:none; letter-spacing:0; padding:2px 7px; border-radius:4px; background:rgba(46,204,113,0.15); color:var(--accent); font-weight:700; border:1px solid rgba(46,204,113,0.3);">DB 24L (12.0m)</span>
+            </div>
+
+            <!-- Configuração de Espaçamento / Largura do Implemento -->
+            <div class="form-group" style="background:rgba(0,0,0,0.25); padding:8px 10px; border-radius:7px; border:1px solid var(--border-color); margin-bottom:10px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+                <span class="form-label" style="margin:0; font-size:11.5px; font-weight:700; color:var(--text-main); display:flex; align-items:center; gap:5px;">
+                  <i class="fa-solid fa-arrows-left-right" style="color:var(--accent);"></i> Espaçamento / Largura da Passada
+                </span>
+                <span style="font-size:10px; color:var(--text-muted);">metros (m)</span>
+              </div>
+              <div style="position:relative; margin-bottom:6px;">
+                <input type="number" class="form-control" id="lineSpacingInput" value="12.0" min="0.5" max="100" step="0.1" style="font-size:13px; font-weight:800; padding:6px 30px 6px 10px; color:#fff; background:rgba(12,18,14,0.9);" />
+                <span style="position:absolute; right:10px; top:50%; transform:translateY(-50%); font-size:11px; color:var(--accent); font-weight:700;">m</span>
+              </div>
+              <!-- Presets Rápidos de Largura -->
+              <div class="chips-row" id="spacingPresetsChips">
+                <div class="chip" data-spacing="6.0">6m</div>
+                <div class="chip" data-spacing="9.0">9m</div>
+                <div class="chip active" data-spacing="12.0">12m</div>
+                <div class="chip" data-spacing="15.0">15m</div>
+                <div class="chip" data-spacing="24.0">24m</div>
+                <div class="chip" data-spacing="36.0">36m</div>
+              </div>
+
+              <!-- Seletor Rápido do Banco de Equipamentos -->
+              <div style="display:flex; align-items:center; gap:6px; margin-top:8px; padding-top:6px; border-top:1px solid rgba(255,255,255,0.08);">
+                <i class="fa-solid fa-tractor" style="font-size:11px; color:var(--gold);" title="Equipamento ativo"></i>
+                <select id="quickMachineSelect" class="form-control" style="font-size:11px; padding:3px 6px; height:28px; flex:1;" title="Selecionar maquinário do banco cadastrado">
+                  <!-- Populated via JS -->
+                </select>
+              </div>
+            </div>
+
+            <!-- Seletor de Modo de Linha -->
+            <div class="gis-panel-tabs" style="margin-bottom:8px;">
+              <button class="gis-tab-btn active" data-mode="straight-ab">Reta A-B</button>
+              <button class="gis-tab-btn" data-mode="contour">Curvas DEM</button>
+              <button class="gis-tab-btn" data-mode="headland">Cabeceiras</button>
+            </div>
+
+            <!-- PANE: RETA A-B -->
+            <div class="guidance-subpane" id="pane-straight-ab" style="display:flex; flex-direction:column; gap:10px;">
+              <div class="btn-grid">
+                <button class="btn" id="btnPickAB">
+                  <i class="fa-solid fa-map-pin"></i> Marcar A & B
+                </button>
+                <button class="btn btn-gold" id="btnAutoAngle">
+                  <i class="fa-solid fa-wand-magic-sparkles"></i> Melhor Ângulo
+                </button>
+              </div>
+              <div id="abStatusText" style="font-size:11px; color:var(--text-muted); padding:2px 4px;">Nenhum ponto marcado (clique em Marcar A & B para balizar no mapa)</div>
+
+              <div class="form-group">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span class="form-label">Azimute / Rumo das Linhas</span>
+                  <span id="headingValDisp" style="font-weight:700; color:var(--accent);">90°</span>
+                </div>
+                <input type="range" class="form-control" id="headingSlider" min="0" max="180" value="90" />
+              </div>
+            </div>
+
+            <!-- PANE: CURVAS DEM (TOPOGRAFIA REAL & RTK) -->
+            <div class="guidance-subpane" id="pane-contour" style="display:none; flex-direction:column; gap:10px;">
+              <div class="gis-panel-tabs" style="margin-bottom:2px;">
+                <button class="gis-tab-btn active" id="btnElevModeSrtm" style="font-size:11px; padding:6px 8px;">Copernicus DEM</button>
+                <button class="gis-tab-btn" id="btnElevModeCsv" style="font-size:11px; padding:6px 8px;">Levantamento RTK</button>
+              </div>
+
+              <div id="csvElevControls" style="display:none; flex-direction:column; gap:6px; background:rgba(0,0,0,0.25); padding:8px; border-radius:6px; border:1px solid var(--border-color);">
+                <span class="form-label" style="font-size:11px;">Sistema de Coordenadas</span>
+                <select id="csvCoordSystem" class="form-control" style="font-size:11.5px; padding:4px 8px;">
+                  <option value="latlon">Lon, Lat, Z (WGS84)</option>
+                  <option value="utm20s">UTM SIRGAS 2000 Zona 20S</option>
+                  <option value="utm21s">UTM SIRGAS 2000 Zona 21S</option>
+                  <option value="utm22s">UTM SIRGAS 2000 Zona 22S</option>
+                  <option value="utm23s">UTM SIRGAS 2000 Zona 23S</option>
+                  <option value="utm24s">UTM SIRGAS 2000 Zona 24S</option>
+                </select>
+                <input type="file" id="csvFileInput" accept=".csv,.txt" style="display:none;" />
+                <button class="btn" id="btnUploadCsv" style="font-size:12px; padding:6px;">
+                  <i class="fa-solid fa-cloud-arrow-up"></i> Carregar CSV/TXT
+                </button>
+              </div>
+
+              <div class="stats-grid">
+                <div class="stat-box"><div class="stat-val" id="topoMinElevDisp">-- m</div><div class="stat-lbl">Cota Mín</div></div>
+                <div class="stat-box"><div class="stat-val" id="topoMaxElevDisp">-- m</div><div class="stat-lbl">Cota Máx</div></div>
+                <div class="stat-box"><div class="stat-val" id="topoDeltaElevDisp">-- m</div><div class="stat-lbl">Desnível</div></div>
+                <div class="stat-box"><div class="stat-val" id="topoSlopeDisp">--%</div><div class="stat-lbl">Declividade</div></div>
+              </div>
+
+              <canvas id="canvasDemProfile" width="350" height="75" style="width:100%; height:75px; background:#080d0a; border-radius:6px; border:1px solid var(--border-color);"></canvas>
+
+              <div class="form-group">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span class="form-label">Percentil de Cota (Isolinha Base)</span>
+                  <span id="contourValDisp" style="font-weight:700; color:var(--accent);">50%</span>
+                </div>
+                <input type="range" class="form-control" id="contourSlider" min="0" max="100" value="50" />
+              </div>
+
+              <div id="elevStatusText" style="font-size:11px; color:var(--text-muted); line-height:1.3;">Elevação pronta.</div>
+              <button class="btn" id="btnPrepElev" style="font-size:12px; padding:6px;">
+                <i class="fa-solid fa-mountain"></i> Atualizar Altimetria Real
+              </button>
+            </div>
+
+            <!-- PANE: CABECEIRAS -->
+            <div class="guidance-subpane" id="pane-headland" style="display:none; flex-direction:column; gap:10px;">
+              <div class="form-group">
+                <span class="form-label">Passadas de Manobra na Borda</span>
+                <div class="chips-row" id="headlandChips">
+                  <div class="chip active" data-passes="0">Sem Borda</div>
+                  <div class="chip" data-passes="1">1 Volta</div>
+                  <div class="chip" data-passes="2">2 Voltas</div>
+                  <div class="chip" data-passes="3">3 Voltas</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Ação Principal de Geração -->
+            <button class="btn btn-primary" id="btnGenerateLines" style="padding:12px; font-size:13.5px; margin-top:8px;" disabled>
+              <i class="fa-solid fa-wand-magic-sparkles"></i> GERAR LINHAS DE PLANTIO
+            </button>
+
+            <!-- Exportação Multi-formato -->
+            <div class="export-format-row" style="display:flex; gap:6px; align-items:center; margin-top:6px;">
+              <select id="exportFormatSelect" class="form-control" style="flex:1; font-size:12px; padding:6px;" disabled>
+                <option value="kml">KML (Google Earth)</option>
+                <option value="gpx">GPX (Garmin / GPS portátil)</option>
+                <option value="geojson">GeoJSON (QGIS / Leaflet)</option>
+              </select>
+              <button class="btn btn-outline" id="btnExportPlantingKML" style="font-size:12px; white-space:nowrap;" disabled>
+                <i class="fa-solid fa-download"></i> Baixar
+              </button>
+            </div>
+            <!-- Exportação Linha Mestre A-B -->
+            <button class="btn btn-ab-master" id="btnExportMasterAB" style="width:100%; margin-top:6px; font-size:12px;" disabled>
+              <i class="fa-solid fa-route"></i> Exportar Linha-Guia Mestre A-B (.xml)
+            </button>
+            <button class="btn btn-danger" id="btnClearField" style="width: 100%; margin-top: 6px; font-size: 12px;">
+              <i class="fa-solid fa-trash"></i> Limpar Área
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- FLOATING MAP CONTROLS -->
+      <div class="floating-map-tools">
+        <button class="map-tool-fab" id="btnLayerPicker" title="Camadas de Satélite">
+          <i class="fa-solid fa-layer-group"></i>
+        </button>
+        <button class="map-tool-fab active" id="btnToggleCoverage" title="Exibir/Ocultar Camada de Aplicação">
+          <i class="fa-solid fa-paint-roller"></i>
+        </button>
+        <button class="map-tool-fab" id="btnGpsLocate" title="Centralizar Posição GPS">
+          <i class="fa-solid fa-crosshairs"></i>
+        </button>
+        <button class="map-tool-fab" id="btnFitBounds" title="Enquadrar Talhão">
+          <i class="fa-solid fa-expand"></i>
+        </button>
+      </div>
+
+      <!-- LAYER SELECTOR MODAL -->
+      <div class="modal-card" id="layerSelectorModal" style="position:absolute; right:64px; top:14px; z-index:900; width:170px; display:none; padding:10px; gap:6px;">
+        <div class="layer-opt active" data-layer="esri" style="padding:6px; font-size:12px; cursor:pointer;"><i class="fa-solid fa-satellite"></i> Satélite HD</div>
+        <div class="layer-opt" data-layer="osm" style="padding:6px; font-size:12px; cursor:pointer;"><i class="fa-solid fa-map"></i> OpenStreetMap</div>
+        <div class="layer-opt" data-layer="dark" style="padding:6px; font-size:12px; cursor:pointer;"><i class="fa-solid fa-moon"></i> Modo Noturno</div>
+        <div class="layer-opt" data-layer="topo" style="padding:6px; font-size:12px; cursor:pointer;"><i class="fa-solid fa-mountain"></i> Topografia</div>
+      </div>
+
+      <!-- AGRIBUS LIGHTBAR HUD OVERLAY -->
+      <div class="agribus-hud-container" id="agribusHud">
+        <div class="hud-top-meta">
+          <div class="hud-values">
+            <span><i class="fa-solid fa-compass"></i> <span id="hudHeading">90° L</span></span>
+            <span><i class="fa-solid fa-gauge"></i> <span id="hudSpeed">6.5 km/h</span></span>
+          </div>
+          <div class="hud-track-badge" id="hudTrackNum">Passada: #--</div>
+        </div>
+
+        <div class="hud-led-bar">
+          <div class="hud-led" data-idx="-5"></div>
+          <div class="hud-led" data-idx="-4"></div>
+          <div class="hud-led" data-idx="-3"></div>
+          <div class="hud-led" data-idx="-2"></div>
+          <div class="hud-led" data-idx="-1"></div>
+          <div class="hud-led center-marker"></div>
+          <div class="hud-led" data-idx="1"></div>
+          <div class="hud-led" data-idx="2"></div>
+          <div class="hud-led" data-idx="3"></div>
+          <div class="hud-led" data-idx="4"></div>
+          <div class="hud-led" data-idx="5"></div>
+        </div>
+
+        <!-- Section Control Visualizer Strip -->
+        <div class="hud-section-control">
+          <div class="section-boxes-row" id="sectionBoxesContainer">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+
+        <div class="hud-bottom-meta">
+          <span id="hudDevDirection">Alinhamento</span>
+          <span class="hud-deviation-value" id="hudDevValue">0.00 m</span>
+          <span id="hudAccuracy"><i class="fa-solid fa-satellite-dish"></i> ±1.8cm RTK</span>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ======================================================================
+         VIEW 2: MODO CABINE & PILOTO VIRTUAL
+         ====================================================================== -->
+    <section class="view-container" id="view-cabin">
+      <div class="page-view-wrapper">
+        <div class="page-header">
+          <div>
+            <div class="page-title">Piloto Virtual & Cabine Agrícola</div>
+            <div class="page-subtitle">Controle de orientação em tempo real e corte automático de seções</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Controle de Navegação</div>
+          <div class="btn-grid">
+            <button class="btn btn-primary" id="btnStartSim">
+              <i class="fa-solid fa-play"></i> Iniciar Simulação
+            </button>
+            <button class="btn btn-gold" id="btnStartGps">
+              <i class="fa-solid fa-satellite-dish"></i> Conectar GPS / RTK
+            </button>
+          </div>
+          <button class="btn btn-danger" id="btnStopNav" style="display:none; margin-top:6px;">
+            <i class="fa-solid fa-stop"></i> Parar Navegação
+          </button>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Instruções para o Operador</div>
+          <div style="font-size:12.5px; color:var(--text-muted); line-height:1.5;">
+            - Mantenha os LEDs verdes centrais acesos para garantir precisão milimétrica nas passadas.<br/>
+            - Quando um desvio lateral ocorrer, corrija a direção no volante de acordo com a indicação da barra.<br/>
+            - As seções da barra de plantio desligarão automaticamente ao entrar em áreas já aplicadas ou cabeceiras.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         VIEW 3: ESTAÇÃO GNSS / RTK
+         ====================================================================== -->
+    <section class="view-container" id="view-rtk">
+      <div class="page-view-wrapper">
+        <div class="page-header">
+          <div>
+            <div class="page-title">Estação de Telemetria GNSS / RTK</div>
+            <div class="page-subtitle">Receptores de alta precisão centimétrica e monitor de sentenças NMEA</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Conectividade de Antenas Externas</div>
+          <div class="btn-grid">
+            <button class="btn btn-primary" id="btnBtConnect">
+              <i class="fa-brands fa-bluetooth-b"></i> Web Bluetooth
+            </button>
+            <button class="btn btn-gold" id="btnSerialConnect">
+              <i class="fa-solid fa-microchip"></i> Serial USB (NMEA)
+            </button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Monitor de Telemetria NMEA ao Vivo ($GNGGA / $GNRMC)</div>
+          <textarea id="nmeaStreamArea" class="form-control" rows="4" readonly style="font-family:monospace; font-size:11px; background:#080d0a; color:#2ecc71;">$GNGGA,163012.00,-12.80512,S,055.50312,W,4,19,0.7,362.4,M,-14.2,M,1.0,0000*5A</textarea>
+        </div>
+
+        <!-- NTRIP Client Configuration Card -->
+        <div class="card card-ntrip">
+          <div class="card-title"><i class="fa-solid fa-tower-broadcast" style="color:#f39c12;"></i> Configuração NTRIP Caster (Correções RTK)</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
+            <div class="form-group">
+              <label class="form-label">Host / IP do Caster</label>
+              <input type="text" id="ntripHost" class="form-control" placeholder="Ex: www.ibge.gov.br" value="" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Porta</label>
+              <input type="number" id="ntripPort" class="form-control" placeholder="2101" value="2101" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Mountpoint</label>
+              <input type="text" id="ntripMountpoint" class="form-control" placeholder="Ex: RBMCSAV0" value="" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Usuário (opcional)</label>
+              <input type="text" id="ntripUser" class="form-control" placeholder="login" value="" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Senha (opcional)</label>
+            <input type="password" id="ntripPass" class="form-control" placeholder="••••••••" value="" />
+          </div>
+          <button class="btn btn-primary" id="btnNtripConnect" style="width:100%; margin-top:8px;">
+            <i class="fa-solid fa-plug"></i> Conectar ao Caster NTRIP
+          </button>
+          <div id="ntripStatus" style="margin-top:8px; font-size:11px; color:var(--text-muted); text-align:center;">
+            <i class="fa-solid fa-circle" style="color:var(--rtk-none);"></i> Desconectado
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         VIEW 4: BANCO DE EQUIPAMENTOS & FROTA AGRÍCOLA
+         ====================================================================== -->
+    <section class="view-container" id="view-fleet">
+      <div class="page-view-wrapper">
+        <div class="page-header" style="flex-wrap:wrap; gap:12px;">
+          <div>
+            <div class="page-title"><i class="fa-solid fa-tractor" style="color:var(--accent); margin-right:8px;"></i> Banco de Equipamentos Agrícolas</div>
+            <div class="page-subtitle">Cadastro técnico, especificações operacionais e importação de planilhas XLSX/CSV</div>
+          </div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="btn btn-primary" id="btnOpenAddEquipmentModal" style="font-size:12px;">
+              <i class="fa-solid fa-plus"></i> Novo Equipamento
+            </button>
+            <button class="btn btn-gold" id="btnImportXlsx" style="font-size:12px;" title="Importar arquivo banco_equipamentos_agricolas.xlsx">
+              <i class="fa-solid fa-file-excel"></i> Importar XLSX
+            </button>
+            <input type="file" id="xlsxFileInput" accept=".xlsx,.xls,.csv" style="display:none;" />
+            <button class="btn btn-outline" id="btnExportEquipmentJson" style="font-size:12px;">
+              <i class="fa-solid fa-download"></i> Exportar (.JSON)
+            </button>
+            <button class="btn btn-outline" id="btnResetEquipmentDefaults" style="font-size:12px;" title="Restaurar catálogo padrão">
+              <i class="fa-solid fa-rotate-left"></i> Restaurar
+            </button>
+          </div>
+        </div>
+
+        <!-- Filtros de Categoria & Busca -->
+        <div class="card" style="padding:10px 14px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <div class="chips-row" id="equipmentCategoryFilter" style="margin:0;">
+              <div class="chip active" data-cat="all">Todos</div>
+              <div class="chip" data-cat="Distribuidor de Calcario/Fertilizante">Distribuidores</div>
+              <div class="chip" data-cat="Semeadora/Plantadeira">Semeadoras/Plantadeiras</div>
+              <div class="chip" data-cat="Pulverizador">Pulverizadores</div>
+              <div class="chip" data-cat="Trator">Tratores</div>
+            </div>
+            <div style="position:relative; min-width:220px; flex:1; max-width:340px;">
+              <i class="fa-solid fa-magnifying-glass" style="position:absolute; left:10px; top:50%; transform:translateY(-50%); font-size:11px; color:var(--text-muted);"></i>
+              <input type="text" class="form-control" id="equipmentSearchInput" placeholder="Buscar por marca, modelo ou insumo..." style="padding-left:28px; font-size:11.5px; height:32px;" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabela / Grade de Equipamentos -->
+        <div class="data-table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Status / Equipamento</th>
+                <th>Categoria</th>
+                <th>Marca & Modelo</th>
+                <th>Largura Útil</th>
+                <th>Capacidade / Carga</th>
+                <th>Potência TDP</th>
+                <th>Acoplamento</th>
+                <th style="text-align:right;">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="fleetTableBody">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ========================================================================
+       MODAL GNSS / RTK
+       ======================================================================== -->
+
+  <!-- MODAL GNSS -->
+  <div class="modal-backdrop" id="gnssModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <span class="modal-title"><i class="fa-solid fa-satellite-dish"></i> Receptor GNSS / RTK</span>
+        <button class="modal-close-btn" id="btnCloseGnssModal">&times;</button>
+      </div>
+      <div style="font-size:12.5px; color:var(--text-muted);">
+        Selecione o método de conexão com a antena de campo ou utilize o simulador RTK centimétrico para testes imediatos.
+      </div>
+      <div class="btn-grid">
+        <button class="btn btn-outline" id="btnSimFix">
+          <i class="fa-solid fa-play"></i> Ativar RTK FIX (±1.8cm)
+        </button>
+        <button class="btn btn-outline" id="btnSimFloat">
+          <i class="fa-solid fa-wave-square"></i> Ativar RTK FLOAT (±18cm)
+        </button>
+      </div>
+      <button class="btn btn-danger" id="btnDisconnectGnss">
+        <i class="fa-solid fa-power-off"></i> Desconectar Antena
+      </button>
+    </div>
+  </div>
+  </div>
+
+  <!-- MODAL CENTRAL DE AJUDA & MANUAL INTERATIVO DO OPERADOR -->
+  <div class="modal-backdrop" id="helpModal">
+    <div class="modal-card help-modal-card" style="max-width:980px; width:95vw; height:88vh; display:flex; flex-direction:column; padding:0; overflow:hidden;">
+      
+      <!-- Header da Central de Ajuda -->
+      <div class="modal-header" style="padding:14px 20px; border-bottom:1px solid var(--border-color); background:rgba(20,30,23,0.98); display:flex; justify-content:space-between; align-items:center;">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <div style="width:38px; height:38px; border-radius:10px; background:var(--accent); color:#0d2818; display:flex; align-items:center; justify-content:center; font-size:18px;">
+            <i class="fa-solid fa-book-open"></i>
+          </div>
+          <div>
+            <div style="font-weight:800; font-size:16px; color:#fff;">Central de Ajuda & Manual Operacional</div>
+            <div style="font-size:11px; color:var(--text-muted);">Instruções passo a passo para operação no escritório e na cabine</div>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <a href="manual.html" target="_blank" class="btn btn-outline" style="font-size:11px; padding:6px 12px; text-decoration:none; display:flex; align-items:center; gap:6px;" title="Abrir versão para impressão / PDF">
+            <i class="fa-solid fa-file-pdf" style="color:#e74c3c;"></i> <span>Versão PDF</span>
+          </a>
+          <button class="modal-close-btn" id="btnCloseHelpModal">&times;</button>
+        </div>
+      </div>
+
+      <!-- Barra de Pesquisa de Tópicos no Manual -->
+      <div style="padding:8px 16px; background:rgba(12,18,14,0.9); border-bottom:1px solid var(--border-color); display:flex; align-items:center; gap:10px;">
+        <i class="fa-solid fa-magnifying-glass" style="color:var(--text-muted); font-size:13px;"></i>
+        <input type="text" id="helpSearchFilter" placeholder="Pesquisar tópico no manual (ex: Cortar APP, Reta A-B, RTK, Seções, KML)..." style="flex:1; background:transparent; border:none; color:#fff; font-size:12.5px; outline:none; font-family:inherit;" />
+      </div>
+
+      <!-- Corpo Dividido: Índice à esquerda + Conteúdo à direita -->
+      <div style="flex:1; display:flex; overflow:hidden;">
+        
+        <!-- Menu Lateral de Capítulos -->
+        <div class="help-sidebar-menu" style="width:230px; background:rgba(14,22,17,0.95); border-right:1px solid var(--border-color); overflow-y:auto; padding:10px 8px; display:flex; flex-direction:column; gap:3px;">
+          <div class="help-chapter-link active" data-target="help-sec-1"><i class="fa-solid fa-circle-play"></i> 1. Visão Geral</div>
+          <div class="help-chapter-link" data-target="help-sec-2"><i class="fa-solid fa-magnifying-glass-location"></i> 2. Busca & Zoom</div>
+          <div class="help-chapter-link" data-target="help-sec-3"><i class="fa-solid fa-draw-polygon"></i> 3. Gestão do Talhão</div>
+          <div class="help-chapter-link" data-target="help-sec-4"><i class="fa-solid fa-scissors"></i> 4. Delimitação & APP</div>
+          <div class="help-chapter-link" data-target="help-sec-5"><i class="fa-solid fa-route"></i> 5. Linhas de Plantio (A-B)</div>
+          <div class="help-chapter-link" data-target="help-sec-6"><i class="fa-solid fa-mountain"></i> 6. Curvas DEM & RTK</div>
+          <div class="help-chapter-link" data-target="help-sec-7"><i class="fa-solid fa-gauge-high"></i> 7. Piloto Cabine & HUD</div>
+          <div class="help-chapter-link" data-target="help-sec-8"><i class="fa-solid fa-spray-can-sparkles"></i> 8. Controle de Seções</div>
+          <div class="help-chapter-link" data-target="help-sec-9"><i class="fa-solid fa-satellite-dish"></i> 9. Conexão GNSS/RTK</div>
+        </div>
+
+        <!-- Conteúdo Completo do Manual -->
+        <div class="help-main-content" id="helpMainContent" style="flex:1; overflow-y:auto; padding:20px 26px; font-size:13px; line-height:1.6; color:var(--text-main);">
+          
+          <!-- Cap 1 -->
+          <div class="help-doc-section" id="help-sec-1">
+            <h3 style="color:var(--accent); font-size:16px; margin-bottom:8px; display:flex; align-items:center; gap:8px;">
+              <i class="fa-solid fa-circle-play"></i> 1. Visão Geral & Como Acessar o Sistema
+            </h3>
+            <p>O <b>AgroLinhas Pro</b> é uma plataforma completa de agricultura de precisão para geração de linhas paralelas, curvas de nível DEM, zoneamento de áreas úteis e piloto virtual com barra de luzes.</p>
+            <div class="card" style="margin:10px 0; background:rgba(0,0,0,0.3);">
+              <ul style="padding-left:18px; display:flex; flex-direction:column; gap:6px;">
+                <li><b>Servidor Local:</b> O sistema roda localmente através do arquivo <code>start.bat</code> em <code>http://localhost:8080</code>.</li>
+                <li><b>Operação Offline:</b> O sistema conta com Service Worker PWA, podendo ser utilizado em tablets no campo sem sinal de internet.</li>
+              </ul>
+            </div>
+          </div>
+
+          <hr style="border:0; border-top:1px solid var(--border-color); margin:18px 0;" />
+
+          <!-- Cap 2 -->
+          <div class="help-doc-section" id="help-sec-2">
+            <h3 style="color:var(--accent); font-size:16px; margin-bottom:8px; display:flex; align-items:center; gap:8px;">
+              <i class="fa-solid fa-magnifying-glass-location"></i> 2. Navegação de Mapa, Lupa & Zoom Google Earth
+            </h3>
+            <p>No canto direito do mapa, utilize o conjunto de controle cartográfico:</p>
+            <div class="card" style="margin:10px 0; background:rgba(0,0,0,0.3);">
+              <ul style="padding-left:18px; display:flex; flex-direction:column; gap:6px;">
+                <li>🔍 <b>Lupa de Busca:</b> Clique para abrir a barra de pesquisa. Digite coordenadas (ex: <code>-12.805, -55.503</code>) ou nome do município (ex: <i>Sorriso, MT</i>) para voar diretamente até a fazenda.</li>
+                <li>🧭 <b>Bússola:</b> Clique para alinhar a rotação do mapa com o Norte.</li>
+                <li>➕ <b>/</b> ➖ <b>Zoom & Slider Vertical:</b> Controle contínuo de aproximação e afastamento da imagem de satélite.</li>
+                <li>⛶ <b>Enquadrar:</b> Centraliza o talhão ativo na tela com 1 clique.</li>
+              </ul>
+            </div>
+          </div>
+
+          <hr style="border:0; border-top:1px solid var(--border-color); margin:18px 0;" />
+
+          <!-- Cap 3 -->
+          <div class="help-doc-section" id="help-sec-3">
+            <h3 style="color:var(--accent); font-size:16px; margin-bottom:8px; display:flex; align-items:center; gap:8px;">
+              <i class="fa-solid fa-draw-polygon"></i> 3. Gestão do Talhão (Desenhar ou Importar KML)
+            </h3>
+            <p>No painel lateral esquerdo (Card 1):</p>
+            <div class="card" style="margin:10px 0; background:rgba(0,0,0,0.3);">
+              <ul style="padding-left:18px; display:flex; flex-direction:column; gap:6px;">
+                <li><b>Desenhar:</b> Clique em <i>Desenhar</i> e marque os vértices do talhão na tela. Dê duplo clique no último ponto para fechar.</li>
+                <li><b>Importar KML:</b> Clique em <i>Importar KML</i> e carregue um arquivo <code>.kml</code> ou <code>.geojson</code> do seu GPS ou Google Earth. A área em hectares (ha) será calculada na hora.</li>
+              </ul>
+            </div>
+          </div>
+
+          <hr style="border:0; border-top:1px solid var(--border-color); margin:18px 0;" />
+
+          <!-- Cap 4 -->
+          <div class="help-doc-section" id="help-sec-4">
+            <h3 style="color:var(--accent); font-size:16px; margin-bottom:8px; display:flex; align-items:center; gap:8px;">
+              <i class="fa-solid fa-scissors"></i> 4. Delimitação de Áreas Abertas (Lavoura) vs Fechadas (APP)
+            </h3>
+            <p>Isole áreas não cultiváveis com total facilidade:</p>
+            <div class="card" style="margin:10px 0; background:rgba(0,0,0,0.3);">
+              <ul style="padding-left:18px; display:flex; flex-direction:column; gap:6px;">
+                <li>✂️ <b>Cortar Linha:</b> Desenhe uma linha reta cruzando o talhão de ponta a ponta para fatiar em partes menores.</li>
+                <li>🌲 <b>Recortar APP Interna:</b> Clique no botão dourado e desenhe o contorno de capões de mata, represas ou erosões internas.</li>
+                <li>👆 <b>Clique Direto no Mapa:</b> Clique em qualquer parte para alternar entre <b>🌱 Aberta (Lavoura - Verde)</b> e <b>🌲 Fechada (APP/Reserva - Vermelho)</b>.</li>
+                <li>✅ <b>Usar Apenas Áreas Abertas:</b> Aplica o zoneamento para que as linhas de plantio sejam geradas exclusivamente na área útil!</li>
+              </ul>
+            </div>
+          </div>
+
+          <hr style="border:0; border-top:1px solid var(--border-color); margin:18px 0;" />
+
+          <!-- Cap 5 -->
+          <div class="help-doc-section" id="help-sec-5">
+            <h3 style="color:var(--accent); font-size:16px; margin-bottom:8px; display:flex; align-items:center; gap:8px;">
+              <i class="fa-solid fa-route"></i> 5. Traçado de Linhas de Plantio (Reta A-B & Azimute)
+            </h3>
+            <p>No Card 3 (Padrão de Linhas):</p>
+            <div class="card" style="margin:10px 0; background:rgba(0,0,0,0.3);">
+              <ul style="padding-left:18px; display:flex; flex-direction:column; gap:6px;">
+                <li><b>Espaçamento / Largura:</b> Ajuste a largura útil da passada (em metros) ou selecione um dos atalhos rápidos (6m, 9m, 12m, 15m, 24m, 36m) para definir a distância entre passadas.</li>
+                <li><b>Marcar A & B:</b> Clique no mapa para posicionar o ponto A e o ponto B que definem a linha guia mestre.</li>
+                <li><b>Melhor Ângulo:</b> Calcula automaticamente o rumo com a maior extensão de passada contínua.</li>
+                <li><b>Cabeceiras:</b> Selecione de 1 a 3 voltas de cabeceira para manobras da máquina nas pontas.</li>
+                <li><b>Gerar Linhas de Plantio:</b> Traça todas as passadas paralelas no espaçamento configurado.</li>
+              </ul>
+            </div>
+          </div>
+
+          <hr style="border:0; border-top:1px solid var(--border-color); margin:18px 0;" />
+
+          <!-- Cap 6 -->
+          <div class="help-doc-section" id="help-sec-6">
+            <h3 style="color:var(--accent); font-size:16px; margin-bottom:8px; display:flex; align-items:center; gap:8px;">
+              <i class="fa-solid fa-mountain"></i> 6. Topografia Real & Curvas de Nível (Copernicus DEM & RTK)
+            </h3>
+            <div class="card" style="margin:10px 0; background:rgba(0,0,0,0.3);">
+              <ul style="padding-left:18px; display:flex; flex-direction:column; gap:6px;">
+                <li><b>Copernicus DEM:</b> Altimetria global via satélite em 1 clique em <i>Atualizar Altimetria Real</i>.</li>
+                <li><b>Levantamento RTK (CSV/TXT):</b> Suporta arquivos topográficos em WGS84 ou UTM SIRGAS 2000 (20S a 24S) com Proj4.js.</li>
+                <li><b>Percentil de Cota:</b> Escolha a curva isolinha mestra no slider para guiar o plantio em nível.</li>
+              </ul>
+            </div>
+          </div>
+
+          <hr style="border:0; border-top:1px solid var(--border-color); margin:18px 0;" />
+
+          <!-- Cap 7 -->
+          <div class="help-doc-section" id="help-sec-7">
+            <h3 style="color:var(--accent); font-size:16px; margin-bottom:8px; display:flex; align-items:center; gap:8px;">
+              <i class="fa-solid fa-gauge-high"></i> 7. Piloto Cabine & Lightbar HUD (Barra de Luzes)
+            </h3>
+            <p>No menu <b>2. Piloto Cabine HUD</b>:</p>
+            <div class="card" style="margin:10px 0; background:rgba(0,0,0,0.3);">
+              <ul style="padding-left:18px; display:flex; flex-direction:column; gap:6px;">
+                <li>🟢 <b>Verde Central:</b> Alinhamento perfeito na linha (desvio lateral &le; 12 cm).</li>
+                <li>🟡 <b>Amarelo:</b> Atenção (desvio entre 12 cm e 40 cm). Esterçar suavemente para o centro.</li>
+                <li>🔴 <b>Vermelho:</b> Alerta de desvio (&gt; 40 cm). Corrigir direção conforme as setas da tela.</li>
+              </ul>
+            </div>
+          </div>
+
+          <hr style="border:0; border-top:1px solid var(--border-color); margin:18px 0;" />
+
+          <!-- Cap 8 -->
+          <div class="help-doc-section" id="help-sec-8">
+            <h3 style="color:var(--accent); font-size:16px; margin-bottom:8px; display:flex; align-items:center; gap:8px;">
+              <i class="fa-solid fa-spray-can-sparkles"></i> 8. Controle Automático de Seções da Barra
+            </h3>
+            <p>O algoritmo <code>SectionEngine</code> desliga automaticamente as seções da plantadeira (S1, S2...) ao passar por áreas já semeadas ou ao atingir a borda do talhão, religando-as instantaneamente em solo virgem.</p>
+          </div>
+
+          <hr style="border:0; border-top:1px solid var(--border-color); margin:18px 0;" />
+
+          <!-- Cap 9 -->
+          <div class="help-doc-section" id="help-sec-9">
+            <h3 style="color:var(--accent); font-size:16px; margin-bottom:8px; display:flex; align-items:center; gap:8px;">
+              <i class="fa-solid fa-satellite-dish"></i> 9. Conexão com Antena GNSS / RTK
+            </h3>
+            <p>Clique no indicador <b>RTK FIX</b> no topo para conectar sua antena via Bluetooth ou Serial NMEA, ou alternar modos de simulação para testes operacionais.</p>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAL CADASTRO / EDIÇÃO DE EQUIPAMENTO -->
+  <div class="modal-backdrop" id="modalEquipmentForm">
+    <div class="modal-card" style="max-width:700px;">
+      <div class="modal-header">
+        <span class="modal-title" id="equipmentFormTitle"><i class="fa-solid fa-tractor"></i> Cadastrar Equipamento Agrícola</span>
+        <button class="modal-close-btn" id="btnCloseEquipmentFormModal">&times;</button>
+      </div>
+
+      <form id="formEquipment" style="display:flex; flex-direction:column; gap:12px;">
+        <input type="hidden" id="eqFormId" value="" />
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <div class="form-group">
+            <label class="form-label">Categoria *</label>
+            <select class="form-control" id="eqFormCategory" required>
+              <option value="Distribuidor de Calcario/Fertilizante">Distribuidor de Calcário/Fertilizante</option>
+              <option value="Semeadora/Plantadeira">Semeadora/Plantadeira</option>
+              <option value="Pulverizador">Pulverizador</option>
+              <option value="Trator">Trator</option>
+              <option value="Colheitadeira">Colheitadeira</option>
+              <option value="Outros">Outros</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Marca (Fabricante) *</label>
+            <input type="text" class="form-control" id="eqFormBrand" placeholder="ex: Jan, John Deere, Stara, Jacto" required />
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <div class="form-group">
+            <label class="form-label">Modelo Comercial *</label>
+            <input type="text" class="form-control" id="eqFormModel" placeholder="ex: Lancer Magnu 10000" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Nome Completo do Catálogo</label>
+            <input type="text" class="form-control" id="eqFormName" placeholder="ex: Distribuidor Lancer Magnu 10000 - Jan" />
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
+          <div class="form-group">
+            <label class="form-label">Largura de Trabalho (m) *</label>
+            <input type="number" step="0.1" class="form-control" id="eqFormWidth" placeholder="ex: 36.0" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Capacidade Volumétrica (L)</label>
+            <input type="number" step="10" class="form-control" id="eqFormCapacity" placeholder="ex: 10000" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Capacidade Carga (kg)</label>
+            <input type="number" step="10" class="form-control" id="eqFormPayload" placeholder="ex: 15000" />
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
+          <div class="form-group">
+            <label class="form-label">Potência Requerida (CV)</label>
+            <input type="number" step="5" class="form-control" id="eqFormPower" placeholder="ex: 130" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Rotação TDP (rpm)</label>
+            <input type="number" step="10" class="form-control" id="eqFormPto" placeholder="ex: 540 ou 1000" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Rotação dos Discos (rpm)</label>
+            <input type="number" step="10" class="form-control" id="eqFormDisks" placeholder="ex: 828" />
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <div class="form-group">
+            <label class="form-label">Sistema de Acoplamento</label>
+            <select class="form-control" id="eqFormCoupling">
+              <option value="Barra de tracao">Barra de tração</option>
+              <option value="Engate de 3 pontos">Engate de 3 pontos</option>
+              <option value="Autopropelido">Autopropelido</option>
+              <option value="Engate rapido">Engate rápido</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Peso Vazio (kg)</label>
+            <input type="number" step="10" class="form-control" id="eqFormWeight" placeholder="ex: 4040" />
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
+          <div class="form-group">
+            <label class="form-label">Altura (mm)</label>
+            <input type="number" class="form-control" id="eqFormHeight" placeholder="ex: 2696" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Largura Dimensão (mm)</label>
+            <input type="number" class="form-control" id="eqFormDimWidth" placeholder="ex: 3197" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Comprimento (mm)</label>
+            <input type="number" class="form-control" id="eqFormLength" placeholder="ex: 7170" />
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <div class="form-group">
+            <label class="form-label">Bitola das Rodas (mm)</label>
+            <input type="number" class="form-control" id="eqFormTrack" placeholder="ex: 2552" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Vão Livre sob Eixo (mm)</label>
+            <input type="number" class="form-control" id="eqFormClearance" placeholder="ex: 450" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Observações / Aplicação / Culturas</label>
+          <textarea class="form-control" id="eqFormNotes" rows="2" placeholder="ex: Aplicação de calcário úmido ou seco, gesso, sementes, fertilizantes orgânicos..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Link da Fonte Oficial / Catálogo</label>
+          <input type="url" class="form-control" id="eqFormSource" placeholder="https://..." />
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:8px;">
+          <button type="button" class="btn btn-outline" id="btnCancelEquipmentForm">Cancelar</button>
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Salvar Equipamento</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL FICHA TÉCNICA DO EQUIPAMENTO -->
+  <div class="modal-backdrop" id="modalEquipmentDetails">
+    <div class="modal-card" style="max-width:650px;">
+      <div class="modal-header">
+        <span class="modal-title" id="eqDetailTitle"><i class="fa-solid fa-file-lines"></i> Ficha Técnica do Equipamento</span>
+        <button class="modal-close-btn" id="btnCloseEqDetailModal">&times;</button>
+      </div>
+
+      <div id="eqDetailBody" style="display:flex; flex-direction:column; gap:14px; font-size:12.5px;">
+        <!-- Filled dynamically -->
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; border-top:1px solid var(--border-color); padding-top:12px;">
+        <a id="eqDetailSourceLink" href="#" target="_blank" class="btn btn-outline" style="font-size:11.5px;">
+          <i class="fa-solid fa-arrow-up-right-from-square"></i> Catálogo do Fabricante
+        </a>
+        <button class="btn btn-primary" id="btnSelectFromDetail" style="font-size:12px;">
+          <i class="fa-solid fa-check"></i> Selecionar para Traçado
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div class="toast-msg" id="appToast">Notificação</div>
+
+</div>
+
+<!-- Bibliotecas Cartográficas, Geoespaciais & Planilhas -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Turf.js/6.5.0/turf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.9.2/proj4.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<!-- Módulo Principal ES Modules -->
+<script type="module" src="js/app.js"></script>
+
+</body>
+</html>

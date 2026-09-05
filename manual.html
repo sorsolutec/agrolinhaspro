@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AgroLinhas Pro - Manual do Usuário & Guia Operacional</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  
+  <style>
+    :root {
+      --primary: #1b4332;
+      --accent: #2ecc71;
+      --gold: #f39c12;
+      --dark: #0f1712;
+      --text: #2d3748;
+      --text-muted: #718096;
+      --bg-page: #f8faf9;
+      --card-bg: #ffffff;
+      --border: #e2e8f0;
+      --danger: #e74c3c;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: var(--bg-page);
+      color: var(--text);
+      line-height: 1.6;
+      font-size: 14px;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    /* BARRA SUPERIOR FIXA (NÃO IMPRIME) */
+    .top-actions-bar {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: rgba(27, 67, 50, 0.96);
+      backdrop-filter: blur(10px);
+      color: #fff;
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .top-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+      font-size: 16px;
+      letter-spacing: 0.5px;
+    }
+
+    .top-brand i {
+      color: var(--accent);
+      font-size: 20px;
+    }
+
+    .btn-print {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--accent);
+      color: #0d2818;
+      border: none;
+      padding: 8px 18px;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      transition: all 0.2s ease;
+    }
+
+    .btn-print:hover {
+      background: #27ae60;
+      color: #fff;
+      transform: translateY(-1px);
+    }
+
+    .btn-back {
+      background: transparent;
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.3);
+      padding: 7px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-back:hover {
+      background: rgba(255,255,255,0.1);
+    }
+
+    /* CONTAINER DO DOCUMENTO */
+    .doc-container {
+      max-width: 900px;
+      margin: 30px auto;
+      background: var(--card-bg);
+      padding: 50px 60px;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+      border: 1px solid var(--border);
+    }
+
+    /* CAPA DO MANUAL */
+    .manual-cover {
+      text-align: center;
+      padding: 40px 0 50px 0;
+      border-bottom: 2px solid var(--border);
+      margin-bottom: 40px;
+    }
+
+    .cover-icon {
+      width: 70px;
+      height: 70px;
+      background: linear-gradient(135deg, #1b4332, #2ecc71);
+      color: #fff;
+      border-radius: 16px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      margin-bottom: 16px;
+      box-shadow: 0 6px 18px rgba(46, 204, 113, 0.3);
+    }
+
+    .manual-title {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--primary);
+      margin-bottom: 6px;
+      letter-spacing: -0.5px;
+    }
+
+    .manual-subtitle {
+      font-size: 15px;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+    }
+
+    .manual-meta-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      max-width: 650px;
+      margin: 0 auto;
+      background: #f1f8f4;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #d8ebd9;
+      font-size: 11.5px;
+    }
+
+    .meta-item strong {
+      display: block;
+      color: var(--primary);
+      font-weight: 700;
+    }
+
+    /* SUMÁRIO */
+    .toc-card {
+      background: #fafbfc;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 35px;
+    }
+
+    .toc-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .toc-list {
+      list-style: none;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px 20px;
+    }
+
+    .toc-list a {
+      color: #2b6cb0;
+      text-decoration: none;
+      font-size: 12.5px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .toc-list a:hover {
+      text-decoration: underline;
+      color: var(--primary);
+    }
+
+    /* SEÇÕES DO MANUAL */
+    .manual-section {
+      margin-bottom: 40px;
+      page-break-inside: avoid;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 8px;
+      margin-bottom: 16px;
+    }
+
+    .section-num {
+      width: 30px;
+      height: 30px;
+      background: var(--primary);
+      color: #fff;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 14px;
+    }
+
+    .section-title {
+      font-size: 19px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    h3 {
+      font-size: 14.5px;
+      font-weight: 700;
+      color: #1a202c;
+      margin: 18px 0 8px 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    p {
+      margin-bottom: 12px;
+      color: #4a5568;
+    }
+
+    /* PASSOS & INSTRUÇÕES */
+    .step-box {
+      display: flex;
+      gap: 14px;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--primary);
+      border-radius: 6px;
+      padding: 12px 16px;
+      margin-bottom: 10px;
+    }
+
+    .step-badge {
+      width: 24px;
+      height: 24px;
+      background: #e6f4ea;
+      color: var(--primary);
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 11.5px;
+      flex-shrink: 0;
+    }
+
+    .step-content {
+      flex: 1;
+    }
+
+    .step-content strong {
+      color: #1a202c;
+      font-weight: 700;
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    /* CALLOUT BOXES (DICAS / AVISOS) */
+    .callout {
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin: 14px 0;
+      font-size: 13px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .callout-tip {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      color: #166534;
+    }
+
+    .callout-tip i {
+      color: #22c55e;
+      font-size: 18px;
+      margin-top: 1px;
+    }
+
+    .callout-warn {
+      background: #fffbeb;
+      border: 1px solid #fef3c7;
+      color: #92400e;
+    }
+
+    .callout-warn i {
+      color: #f59e0b;
+      font-size: 18px;
+      margin-top: 1px;
+    }
+
+    .callout-important {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #991b1b;
+    }
+
+    .callout-important i {
+      color: #ef4444;
+      font-size: 18px;
+      margin-top: 1px;
+    }
+
+    /* TABELAS TÉCNICAS */
+    .manual-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0 16px 0;
+      font-size: 12.5px;
+    }
+
+    .manual-table th, .manual-table td {
+      border: 1px solid var(--border);
+      padding: 8px 12px;
+      text-align: left;
+    }
+
+    .manual-table th {
+      background: #f8fafc;
+      color: var(--primary);
+      font-weight: 700;
+    }
+
+    .manual-table tr:nth-child(even) {
+      background: #fafafa;
+    }
+
+    .badge-pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .badge-green { background: #dcfce7; color: #15803d; }
+    .badge-red { background: #fee2e2; color: #b91c1c; }
+    .badge-gold { background: #fef3c7; color: #b45309; }
+
+    /* TECLADO / ATALHOS */
+    kbd {
+      background: #edf2f7;
+      border: 1px solid #cbd5e0;
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-family: monospace;
+      font-size: 11.5px;
+      box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+    }
+
+    /* CONFIGURAÇÃO ESPECÍFICA PARA IMPRESSÃO / SALVAR EM PDF */
+    @media print {
+      body {
+        background: #fff !important;
+        font-size: 11pt !important;
+        color: #000 !important;
+      }
+      .top-actions-bar {
+        display: none !important;
+      }
+      .doc-container {
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: 100% !important;
+      }
+      .manual-cover {
+        padding-top: 10px;
+        margin-bottom: 25px;
+      }
+      .manual-section {
+        page-break-inside: avoid;
+        margin-bottom: 25px;
+      }
+      .page-break {
+        page-break-before: always;
+      }
+      @page {
+        size: A4 portrait;
+        margin: 15mm;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- BARRA DE AÇÕES SUPERIOR (NÃO IMPRIME) -->
+  <div class="top-actions-bar">
+    <div class="top-brand">
+      <i class="fa-solid fa-tractor"></i>
+      <span>AgroLinhas PRO • Manual do Operador</span>
+    </div>
+    <div style="display:flex; gap:10px; align-items:center;">
+      <a href="index.html" class="btn-back"><i class="fa-solid fa-arrow-left"></i> Voltar ao Sistema</a>
+      <button class="btn-print" onclick="window.print()">
+        <i class="fa-solid fa-file-pdf"></i> Salvar / Imprimir PDF
+      </button>
+    </div>
+  </div>
+
+  <!-- CORPO DO DOCUMENTO -->
+  <div class="doc-container">
+
+    <!-- CAPA -->
+    <div class="manual-cover">
+      <div class="cover-icon">
+        <i class="fa-solid fa-route"></i>
+      </div>
+      <h1 class="manual-title">MANUAL OPERACIONAL DO USUÁRIO</h1>
+      <div class="manual-subtitle">Guia Completo de Traçado de Linhas, Delimitação de Áreas Úteis & Piloto Automático Agrícola</div>
+
+      <div class="manual-meta-grid">
+        <div class="meta-item"><strong>Software:</strong> AgroLinhas Pro</div>
+        <div class="meta-item"><strong>Versão:</strong> 2.5.0 Enterprise</div>
+        <div class="meta-item"><strong>Precisão:</strong> RTK Centimétrico</div>
+        <div class="meta-item"><strong>Atualização:</strong> Agosto/2026</div>
+      </div>
+
+      <div style="display:flex; justify-content:center; align-items:center; gap:12px; margin-top:20px; padding:10px; background:#f8fafc; border-radius:8px; border:1px solid #e2e8f0; max-width:480px; margin-left:auto; margin-right:auto;">
+        <img src="img/sstecnol-logo.png" alt="SSTecnol 2026" style="width:44px; height:44px; border-radius:50%;" />
+        <div style="text-align:left; font-size:11px; color:#4a5568; line-height:1.35;">
+          <b style="color:#1b4332;">© 2026 SSTecnol • Empresa Desenvolvedora</b><br/>
+          Selo de Autoria & Proveniência Digital (ID-456)
+        </div>
+      </div>
+    </div>
+
+    <!-- SUMÁRIO -->
+    <div class="toc-card">
+      <div class="toc-title"><i class="fa-solid fa-list-ol"></i> Sumário de Operações</div>
+      <ul class="toc-list">
+        <li><a href="#sec-1"><i class="fa-solid fa-chevron-right"></i> 1. Visão Geral & Acesso ao Sistema</a></li>
+        <li><a href="#sec-2"><i class="fa-solid fa-chevron-right"></i> 2. Gestão do Talhão & Importação KML</a></li>
+        <li><a href="#sec-3"><i class="fa-solid fa-chevron-right"></i> 3. Delimitação de Área Aberta x APP</a></li>
+        <li><a href="#sec-4"><i class="fa-solid fa-chevron-right"></i> 4. Traçado de Linhas de Plantio (A-B)</a></li>
+        <li><a href="#sec-5"><i class="fa-solid fa-chevron-right"></i> 5. Topografia Real (Copernicus DEM & RTK)</a></li>
+        <li><a href="#sec-6"><i class="fa-solid fa-chevron-right"></i> 6. Navegação de Cabine & Lightbar HUD</a></li>
+        <li><a href="#sec-7"><i class="fa-solid fa-chevron-right"></i> 7. Controle Automático de Seções</a></li>
+        <li><a href="#sec-8"><i class="fa-solid fa-chevron-right"></i> 8. Exportação KML & Monitores de Cabine</a></li>
+      </ul>
+    </div>
+
+    <!-- SEÇÃO 1 -->
+    <div class="manual-section" id="sec-1">
+      <div class="section-header">
+        <div class="section-num">1</div>
+        <div class="section-title">Visão Geral & Acesso ao Sistema</div>
+      </div>
+      <p>O <b>AgroLinhas Pro</b> é uma estação cartográfica e sistema de orientação para agricultura de precisão. Funciona diretamente no navegador web do computador de escritório ou no tablet embarcado na cabine do maquinário agrícola.</p>
+      
+      <h3><i class="fa-solid fa-globe"></i> Acesso Local e Navegação</h3>
+      <div class="step-box">
+        <div class="step-badge">1</div>
+        <div class="step-content">
+          <strong>Iniciar o Servidor:</strong>
+          Abra o atalho <code>start.bat</code> na pasta do sistema ou inicie o serviço PowerShell. O sistema abrirá em <code>http://localhost:8080</code>.
+        </div>
+      </div>
+      <div class="step-box">
+        <div class="step-badge">2</div>
+        <div class="step-content">
+          <strong>Controles de Zoom e Busca (Estilo Google Earth):</strong>
+          No canto direito do mapa, utilize os botões <b>+</b> e <b>-</b>, ou arraste a barra vertical de zoom. Clique na <b>Lupa (🔍)</b> para pesquisar por coordenadas (ex: <code>-12.805, -55.503</code>) ou nome do município (ex: <i>Sorriso, MT</i>) para voar instantaneamente até a área.
+        </div>
+      </div>
+
+      <div class="callout callout-tip">
+        <i class="fa-solid fa-lightbulb"></i>
+        <div><b>Dica de Conexão:</b> O sistema opera 100% offline após o primeiro carregamento, graças ao Service Worker PWA integrado.</div>
+      </div>
+    </div>
+
+    <!-- SEÇÃO 2 -->
+    <div class="manual-section" id="sec-2">
+      <div class="section-header">
+        <div class="section-num">2</div>
+        <div class="section-title">Gestão do Talhão & Importação KML</div>
+      </div>
+      <p>Antes de gerar as linhas de plantio, é necessário delimitar o contorno perimetral da área a ser trabalhada.</p>
+
+      <h3><i class="fa-solid fa-draw-polygon"></i> Opção A: Desenhar Talhão no Mapa</h3>
+      <div class="step-box">
+        <div class="step-badge">1</div>
+        <div class="step-content">
+          No painel esquerdo (Card 1), clique em <b><i class="fa-solid fa-pen-nib"></i> Desenhar</b>.
+        </div>
+      </div>
+      <div class="step-box">
+        <div class="step-badge">2</div>
+        <div class="step-content">
+          Clique nos vértices do talhão sobre a imagem de satélite. Dê um duplo clique no último ponto para fechar o polígono.
+        </div>
+      </div>
+
+      <h3><i class="fa-solid fa-file-import"></i> Opção B: Importar Arquivo KML / GeoJSON</h3>
+      <div class="step-box">
+        <div class="step-badge">1</div>
+        <div class="step-content">
+          Clique em <b><i class="fa-solid fa-file-import"></i> Importar KML</b> e selecione o arquivo <code>.kml</code>, <code>.geojson</code> ou <code>.json</code> exportado do Google Earth, GPS ou SIG.
+        </div>
+      </div>
+      <div class="step-box">
+        <div class="step-badge">2</div>
+        <div class="step-content">
+          O sistema enquadrará o talhão automaticamente, calculando a área total em hectares (ha) no selo verde do painel.
+        </div>
+      </div>
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- SEÇÃO 3 -->
+    <div class="manual-section" id="sec-3">
+      <div class="section-header">
+        <div class="section-num">3</div>
+        <div class="section-title">Delimitação de Área Aberta (Lavoura) x Fechada (APP)</div>
+      </div>
+      <p>Glebas agrícolas frequentemente possuem estradas internas, matas, nascentes ou áreas de preservação permanente (APP) que não devem receber sementes nem fertilizantes.</p>
+
+      <h3><i class="fa-solid fa-scissors"></i> Como Cortar e Fatiar o Talhão</h3>
+      <div class="step-box">
+        <div class="step-badge">1</div>
+        <div class="step-content">
+          <strong>Cortar Linha:</strong>
+          Clique em <b><i class="fa-solid fa-scissors"></i> Cortar Linha</b> (no painel ou na barra superior). Desenhe uma reta cruzando o talhão de ponta a ponta. O polígono será dividido instantaneamente em sub-partes.
+        </div>
+      </div>
+      <div class="step-box">
+        <div class="step-badge">2</div>
+        <div class="step-content">
+          <strong>Recortar APP Interna (Ilhas de Mata):</strong>
+          Clique no botão dourado <b><i class="fa-solid fa-tree"></i> Recortar APP Interna</b>. Desenhe o contorno da mata ou lagoa que fica dentro do talhão. A área é recortada automaticamente da lavoura útil.
+        </div>
+      </div>
+      <div class="step-box">
+        <div class="step-badge">3</div>
+        <div class="step-content">
+          <strong>Classificação com 1 Clique (Click-to-Toggle):</strong>
+          Clique diretamente em qualquer parte colorida sobre o mapa para alternar entre <span class="badge-pill badge-green">🌱 Aberta (Lavoura)</span> e <span class="badge-pill badge-red">🌲 Fechada (APP/Reserva)</span>.
+        </div>
+      </div>
+      <div class="step-box">
+        <div class="step-badge">4</div>
+        <div class="step-content">
+          <strong>Confirmar para Plantio:</strong>
+          Clique em <b><i class="fa-solid fa-check-double"></i> Usar Apenas Áreas Abertas</b> (ou <i>Aplicar no Plantio</i> na barra flutuante). O sistema reconfigura o talhão de trabalho mantendo exclusivamente a área útil!
+        </div>
+      </div>
+
+      <div class="callout callout-warn">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <div><b>Exportação:</b> Você pode clicar em <b>Baixar KML Área Aberta</b> para enviar o perímetro limpo diretamente para o monitor da plantadeira ou para laudos ambientais (CAR).</div>
+      </div>
+    </div>
+
+    <!-- SEÇÃO 4 -->
+    <div class="manual-section" id="sec-4">
+      <div class="section-header">
+        <div class="section-num">4</div>
+        <div class="section-title">Planejamento de Linhas de Plantio (Reta A-B & Azimute)</div>
+      </div>
+      <p>O módulo de orientação calcula as passadas paralelas otimizadas baseadas no <b>Espaçamento / Largura da Passada</b> configurado (com presets rápidos de 6m, 9m, 12m, 15m, 24m e 36m ou ajuste livre).</p>
+
+      <table class="manual-table">
+        <thead>
+          <tr>
+            <th>Modo de Linha</th>
+            <th>Descrição Operacional</th>
+            <th>Aplicação Recomendada</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b>Reta A-B com Balizamento</b></td>
+            <td>O operador marca os pontos <b>A</b> e <b>B</b> no mapa para definir a reta guia mestre.</td>
+            <td>Talhões planos e retangulares com frente definida.</td>
+          </tr>
+          <tr>
+            <td><b>Melhor Ângulo Automático</b></td>
+            <td>O algoritmo encontra a maior frente contínua para minimizar manobras nas cabeceiras.</td>
+            <td>Maximização do rendimento operacional e economia de combustível.</td>
+          </tr>
+          <tr>
+            <td><b>Azimute Manual (0° a 180°)</b></td>
+            <td>Ajuste fino do rumo em graus através do controle deslizante no painel.</td>
+            <td>Alinhamento paralelo a cercas, terraços ou estradas existentes.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3><i class="fa-solid fa-map-pin"></i> Passo a Passo para Reta A-B Manual</h3>
+      <div class="step-box">
+        <div class="step-badge">1</div>
+        <div class="step-content">
+          Selecione a aba <b>Reta A-B</b> e clique em <b><i class="fa-solid fa-map-pin"></i> Marcar A & B</b>.
+        </div>
+      </div>
+      <div class="step-box">
+        <div class="step-badge">2</div>
+        <div class="step-content">
+          Clique no mapa para posicionar o <b>Ponto A</b> (início) e em seguida clique para posicionar o <b>Ponto B</b> (direção).
+        </div>
+      </div>
+      <div class="step-box">
+        <div class="step-badge">3</div>
+        <div class="step-content">
+          Clique em <b><i class="fa-solid fa-wand-magic-sparkles"></i> GERAR LINHAS DE PLANTIO</b>. Todas as passadas serão traçadas em verde sobre a área útil.
+        </div>
+      </div>
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- SEÇÃO 5 -->
+    <div class="manual-section" id="sec-5">
+      <div class="section-header">
+        <div class="section-num">5</div>
+        <div class="section-title">Topografia Real & Curvas de Nível (Copernicus DEM / RTK)</div>
+      </div>
+      <p>Para áreas com declividade acentuada, o plantio em nível evita a erosão hídrica do solo e melhora a retenção de umidade.</p>
+
+      <h3><i class="fa-solid fa-mountain"></i> Fontes Altimétricas Disponíveis</h3>
+      <div class="step-box">
+        <div class="step-badge">A</div>
+        <div class="step-content">
+          <strong>Copernicus DEM (Online via Open-Meteo):</strong>
+          Consulta altimétrica automática via satélite (~90m de resolução global). Basta clicar em <i>Atualizar Altimetria Real</i>.
+        </div>
+      </div>
+      <div class="step-box">
+        <div class="step-badge">B</div>
+        <div class="step-content">
+          <strong>Levantamento Topográfico RTK (Arquivo CSV / TXT):</strong>
+          Suporta levantamentos de alta precisão com Proj4.js em coordenadas <b>WGS84 Lat/Lon</b> ou <b>UTM SIRGAS 2000 (Zonas 20S a 24S)</b> com interpolação IDW.
+        </div>
+      </div>
+      <div class="step-box">
+        <div class="step-badge">C</div>
+        <div class="step-content">
+          <strong>Percentil de Cota & Curvas Isolinhas:</strong>
+          Ajuste o slider de percentil para escolher a cota base mestra da curva de nível que servirá de guia para todo o talhão.
+        </div>
+      </div>
+    </div>
+
+    <!-- SEÇÃO 6 -->
+    <div class="manual-section" id="sec-6">
+      <div class="section-header">
+        <div class="section-num">6</div>
+        <div class="section-title">Piloto Virtual, Cabine & Lightbar HUD</div>
+      </div>
+      <p>Acesse o menu lateral <b>2. Piloto Cabine HUD</b> para entrar na interface de operação em tempo real.</p>
+
+      <h3><i class="fa-solid fa-gauge-high"></i> Elementos da Barra de Luzes (Lightbar LED)</h3>
+      <table class="manual-table">
+        <thead>
+          <tr>
+            <th>Indicador</th>
+            <th>Cor / Estado</th>
+            <th>Ação Recomendada do Operador</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b>LEDs Centrais</b></td>
+            <td><span class="badge-pill badge-green">Verde Fixo</span></td>
+            <td>Trator perfeitamente alinhado na linha guia (desvio &le; 12 cm).</td>
+          </tr>
+          <tr>
+            <td><b>LEDs Intermediários</b></td>
+            <td><span class="badge-pill badge-gold">Amarelo</span></td>
+            <td>Atenção: desvio entre 12 cm e 40 cm. Esterçar volante suavemente.</td>
+          </tr>
+          <tr>
+            <td><b>LEDs Extremos</b></td>
+            <td><span class="badge-pill badge-red">Vermelho</span></td>
+            <td>Alerta de saída de trilha (&gt; 40 cm). Corrigir direção imediatamente.</td>
+          </tr>
+          <tr>
+            <td><b>Sinal RTK FIX</b></td>
+            <td><span class="badge-pill badge-green">Verde (±1.8cm)</span></td>
+            <td>Precisão centimétrica ativa com correção diferencial.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- SEÇÃO 7 -->
+    <div class="manual-section" id="sec-7">
+      <div class="section-header">
+        <div class="section-num">7</div>
+        <div class="section-title">Controle Automático de Seções da Barra</div>
+      </div>
+      <p>O algoritmo <b>SectionEngine</b> monitora a sobreposição da barra com áreas já aplicadas e com os limites do talhão:</p>
+
+      <div class="step-box">
+        <div class="step-badge">1</div>
+        <div class="step-content">
+          <strong>Desligamento Automático (Shut-off):</strong>
+          Quando uma seção da barra invade uma área já plantada ou a borda do talhão, a seção desliga automaticamente (<span class="badge-pill badge-red">S1 Desligada</span>).
+        </div>
+      </div>
+      <div class="step-box">
+        <div class="step-badge">2</div>
+        <div class="step-content">
+          <strong>Religamento Instantâneo:</strong>
+          Ao entrar em solo virgem dentro do perímetro útil, a seção reativa na hora (<span class="badge-pill badge-green">S1 Ativa</span>).
+        </div>
+      </div>
+      <div class="step-box">
+        <div class="step-badge">3</div>
+        <div class="step-content">
+          <strong>Eficiência em Tempo Real:</strong>
+          O sistema previne o desperdício de insumos, sementes e defensivos ao evitar sobreposição nas passadas paralelas e nas bordaduras de cabeceira.
+        </div>
+      </div>
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- SEÇÃO 8 -->
+    <div class="manual-section" id="sec-8">
+      <div class="section-header">
+        <div class="section-num">8</div>
+        <div class="section-title">Exportação KML & Compatibilidade com Monitores</div>
+      </div>
+      <p>Todas as geometrias e planejamentos podem ser exportados nos formatos padrão da agricultura de precisão para carregamento direto nos computadores de bordo e pilotos automáticos.</p>
+
+      <h3><i class="fa-solid fa-file-arrow-down"></i> Exportações Cartográficas</h3>
+      <ul style="margin-left: 20px; margin-bottom: 15px; font-size: 13px; display:flex; flex-direction:column; gap:8px;">
+        <li><b>KML Linhas de Plantio:</b> Contém todas as passadas, linha mestre A-B e cabeceiras compatíveis com <i>John Deere GS3/Gen4, Trimble GFX/TMX, Climate FieldView, Topcon, Agres e Google Earth</i>.</li>
+        <li><b>KML Áreas Abertas (Lavoura Líquida):</b> Contém o perímetro limpo subtraindo todas as áreas de mata e APP internas.</li>
+      </ul>
+
+    <!-- SEÇÃO 9 -->
+    <div class="manual-section" id="sec-9">
+      <div class="section-header">
+        <div class="section-num">9</div>
+        <div class="section-title">Banco de Equipamentos & Importação de Planilhas (XLSX)</div>
+      </div>
+      <p>No menu <b>4. Banco de Equipamentos</b>, gerencie o catálogo de maquinários agrícolas com especificações detalhadas do fabricante:</p>
+
+      <ul style="margin-left: 20px; margin-bottom: 15px; font-size: 13px; display:flex; flex-direction:column; gap:8px;">
+        <li><b>Distribuidor Lancer Magnu 10000 (Jan):</b> Largura de distribuição de 36m, 10.000 L de capacidade, 15.000 kg de carga, 130 CV requeridos e TDP 540 rpm (conforme planilha padrão).</li>
+        <li><b>Semeadoras & Pulverizadores:</b> Modelos John Deere, Fendt, Jacto, Stara e Jumil com larguras e dados operacionais pré-configurados.</li>
+        <li><b>Importação Direta XLSX:</b> Clique em <b>Importar XLSX</b> e selecione o arquivo <code>banco_equipamentos_agricolas.xlsx</code> para carregar novos equipamentos na hora.</li>
+        <li><b>Ficha Técnica:</b> Consulte dimensões (altura, largura, comprimento), bitola, vão livre e links dos manuais oficiais.</li>
+      </ul>
+
+      <div class="callout callout-tip" style="margin-top: 25px;">
+        <i class="fa-solid fa-circle-check"></i>
+        <div>
+          <b>Pronto para Operar!</b><br/>
+          Seguindo este fluxo (Delimitar &rarr; Cortar APP &rarr; Traçar A-B &rarr; Escolher Equipamento &rarr; Gerar &rarr; Navegar/Exportar), o operador planeja e executa a operação agrícola com máxima precisão e economia.
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Projeto de Linhas de Plantio</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+<style>
+  :root{
+    --bg: #F6F4EC;
+    --panel: #FFFFFF;
+    --ink: #22301F;
+    --ink-soft: #5B6154;
+    --green: #2F4A3C;
+    --green-light: #8AA68C;
+    --clay: #B4622B;
+    --amber: #D9A441;
+    --border: #DDD8C8;
+    --danger: #A32D2D;
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg); color: var(--ink);
+  }
+  .app{ display:flex; flex-direction:column; height:100vh; }
+  header{
+    padding: 14px 18px 10px; border-bottom: 1px solid var(--border); background: var(--panel);
+  }
+  header h1{ font-size: 17px; font-weight: 700; margin:0 0 2px; letter-spacing: 0.2px; }
+  header p{ margin:0; font-size: 12.5px; color: var(--ink-soft); }
+  .main{ flex:1; display:flex; min-height:0; flex-wrap: wrap; }
+  #map{ flex: 1 1 60%; min-height: 320px; min-width: 280px; }
+  .panel{
+    flex: 1 1 320px; max-width: 380px; background: var(--panel); border-left: 1px solid var(--border);
+    overflow-y:auto; padding: 16px;
+  }
+  .section{ margin-bottom: 18px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+  .section:last-child{ border-bottom:none; }
+  .section h2{
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--green);
+    font-weight: 700; margin: 0 0 10px;
+  }
+  .row{ display:flex; gap:8px; margin-bottom:8px; }
+  button{
+    font-family: inherit; font-size: 13px; padding: 9px 12px; border-radius: 7px;
+    border: 1px solid var(--border); background: var(--panel); color: var(--ink);
+    cursor:pointer; flex:1;
+  }
+  button:hover{ background:#F1EFE4; }
+  button.primary{ background: var(--green); color:#fff; border-color: var(--green); }
+  button.primary:hover{ background:#25382D; }
+  button.clay{ background: var(--clay); color:#fff; border-color: var(--clay); }
+  button.clay:hover{ background:#984E22; }
+  button:disabled{ opacity:0.45; cursor:not-allowed; }
+  label{ display:block; font-size: 12.5px; color: var(--ink-soft); margin-bottom: 4px; }
+  input[type=number], input[type=range]{
+    width:100%; font-family:inherit; font-size:13px;
+  }
+  input[type=number]{
+    padding: 7px 8px; border-radius:6px; border:1px solid var(--border); background:#fff;
+  }
+  .field{ margin-bottom: 12px; }
+  .hint{ font-size: 11.5px; color: var(--ink-soft); margin-top:4px; line-height:1.4; }
+  .stat-grid{ display:grid; grid-template-columns: 1fr 1fr; gap:8px; }
+  .stat{ background:#F1EFE4; border-radius:7px; padding:8px 10px; }
+  .stat .num{ font-size:16px; font-weight:700; color: var(--green); }
+  .stat .lbl{ font-size:10.5px; color: var(--ink-soft); text-transform:uppercase; letter-spacing:0.4px; }
+  .badge{
+    display:inline-block; font-size:11px; padding:2px 8px; border-radius:20px;
+    background:#F1EFE4; color: var(--ink-soft); margin-left:6px;
+  }
+  .legend{ display:flex; align-items:center; gap:6px; font-size:12px; margin-bottom:4px; }
+  .swatch{ width:14px; height:3px; border-radius:2px; }
+  .notice{
+    font-size: 11.5px; background: #FBF3E6; border: 1px solid #EEDCB8; color: #6E4E1D;
+    padding: 8px 10px; border-radius: 7px; line-height:1.5;
+  }
+  #fileInput{ display:none; }
+  .file-btn{ text-align:center; }
+  .toggle{ display:flex; border:1px solid var(--border); border-radius:7px; overflow:hidden; margin-bottom:10px; }
+  .toggle button{ flex:1; border:none; border-radius:0; background:#fff; }
+  .toggle button.active{ background: var(--green); color:#fff; }
+  .toggle button:hover{ background:#F1EFE4; }
+  .toggle button.active:hover{ background:#25382D; }
+  #abStatus{ font-size:12px; color: var(--ink-soft); margin-bottom:8px; }
+  #abStatus.ready{ color: var(--green); font-weight:600; }
+  #profileChart{ width:100%; height:70px; display:block; }
+  .field-list{ display:flex; flex-direction:column; gap:6px; margin-top:10px; }
+  .field-item{
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    padding:7px 9px; border:1px solid var(--border); border-radius:7px; font-size:12.5px; cursor:pointer;
+  }
+  .field-item:hover{ background:#F1EFE4; }
+  .field-item .fname{ font-weight:600; }
+  .field-item .fmeta{ color: var(--ink-soft); font-size:11px; }
+  .field-item .fdel{ color: var(--danger); font-size:11px; cursor:pointer; padding:2px 4px; }
+  .inline-row{ display:flex; gap:8px; }
+  .inline-row input[type=text]{
+    flex:1; font-family:inherit; font-size:13px; padding:7px 8px; border-radius:6px; border:1px solid var(--border);
+  }
+  .part-item{
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    padding:8px 10px; border:1px solid var(--border); border-radius:7px; font-size:12.5px; margin-bottom:6px;
+  }
+  .part-item .pcolor{ width:12px; height:12px; border-radius:3px; flex-shrink:0; }
+  .part-item .pname{ font-weight:600; flex:1; }
+  .part-item .pha{ color: var(--ink-soft); font-size:11.5px; }
+  .tag-toggle{ display:flex; gap:4px; }
+  .tag-toggle button{
+    flex:none; padding:4px 8px; font-size:11px; border-radius:5px;
+  }
+  .tag-toggle button.active-open{ background: var(--green); color:#fff; border-color: var(--green); }
+  .tag-toggle button.active-closed{ background: var(--ink-soft); color:#fff; border-color: var(--ink-soft); }
+  @media (max-width: 720px){
+    .main{ flex-direction:column; }
+    #map{ height: 45vh; flex: none; }
+    .panel{ max-width:none; border-left:none; border-top:1px solid var(--border); }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>Projeto de linhas de plantio</h1>
+    <p>Desenhe ou importe a área, gere linhas seguindo o relevo do terreno</p>
+  </header>
+  <div class="main">
+    <div id="map"></div>
+    <div class="panel">
+
+      <div class="section">
+        <h2>1. Área</h2>
+        <div class="row">
+          <button id="btnDraw">Desenhar no mapa</button>
+          <button id="btnImport">Importar arquivo</button>
+        </div>
+        <input type="file" id="fileInput" accept=".geojson,.json,.kml" />
+        <div class="hint">Aceita GeoJSON (.geojson/.json) ou KML (.kml) com um polígono.</div>
+        <div id="areaStat" style="margin-top:10px;"></div>
+      </div>
+
+      <div class="section" id="cutSection" style="display:none;">
+        <h2>2. Linha de corte (áreas abertas x fechadas)</h2>
+        <div class="hint" style="margin-bottom:8px;">Desenhe uma linha cruzando o talhão pra separar área aberta (lavoura) de área fechada (mata/APP/reserva). Pode desenhar mais de uma linha de corte.</div>
+        <div class="row">
+          <button id="btnCutLine">Desenhar linha de corte</button>
+          <button id="btnCutReset">Limpar cortes</button>
+        </div>
+        <div id="partsList" style="margin-top:12px;"></div>
+        <button id="btnUseOpen" class="primary" style="width:100%; margin-top:6px;" disabled>Usar só as áreas abertas</button>
+        <button id="btnExportOpenKML" class="clay" style="width:100%; margin-top:8px;" disabled>Baixar KML só da área aberta</button>
+      </div>
+
+      <div class="section">
+        <h2>3. Elevação do terreno</h2>
+        <div class="toggle">
+          <button id="elevModeSrtm" class="active">Elevação real (automático)</button>
+          <button id="elevModeCsv">Meu levantamento (CSV)</button>
+        </div>
+        <div id="srtmControls">
+          <div class="hint">Elevação real (modelo Copernicus DEM, ~90m, via Open-Meteo), buscada automaticamente para a área do talhão. Leva alguns segundos. Precisa de internet.</div>
+        </div>
+        <div id="csvControls" style="display:none;">
+          <div class="hint" style="margin-bottom:8px;">Arquivo CSV/TXT com um ponto por linha: <strong>X,Y,Z</strong> (separado por vírgula, ponto e vírgula ou tab). Use coordenadas do seu levantamento topográfico/RTK.</div>
+          <div class="field">
+            <label for="csvCoordSystem">Sistema de coordenadas do arquivo</label>
+            <select id="csvCoordSystem" style="width:100%; padding:7px 8px; border-radius:6px; border:1px solid var(--border); font-family:inherit; font-size:13px;">
+              <option value="latlon">Lon, Lat, Z (graus, WGS84)</option>
+              <option value="utm20s">UTM SIRGAS2000 20S (E, N, Z)</option>
+              <option value="utm21s">UTM SIRGAS2000 21S (E, N, Z)</option>
+              <option value="utm22s">UTM SIRGAS2000 22S (E, N, Z)</option>
+            </select>
+          </div>
+          <input type="file" id="csvFileInput" accept=".csv,.txt" style="display:none;" />
+          <button id="btnCsvUpload" style="width:100%;">Carregar arquivo de pontos</button>
+        </div>
+        <div id="elevStatus" class="hint" style="margin-top:8px;">Nenhuma elevação preparada ainda — clique em "Gerar linhas de plantio" pra buscar automaticamente, ou prepare antes pelo botão abaixo.</div>
+        <button id="btnPrepElev" style="width:100%; margin-top:8px;">Preparar elevação agora</button>
+      </div>
+
+      <div class="section">
+        <h2>4. Linha-guia</h2>
+        <div class="toggle">
+          <button id="modeContour" class="active">Curva de nível</button>
+          <button id="modeAB">Reta (AB)</button>
+        </div>
+        <div id="contourControls" class="field">
+          <label for="percentile">Referência de elevação (0 = ponto mais baixo, 100 = mais alto)</label>
+          <input type="range" id="percentile" min="0" max="100" value="50" />
+          <div class="hint" id="percentileOut">50%</div>
+        </div>
+        <div id="abControls" style="display:none;">
+          <div class="hint" style="margin-bottom:8px;">Igual ao modo AB do AgriBus-NAVI: marque dois pontos no talhão e o sistema traça uma linha reta entre eles como referência.</div>
+          <button id="btnSetAB" style="width:100%;">Marcar pontos A e B no mapa</button>
+          <div id="abStatus" style="margin-top:6px;">Nenhum ponto marcado</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>5. Parâmetros</h2>
+        <div class="field">
+          <label for="spacing">Espaçamento entre linhas (metros)</label>
+          <input type="number" id="spacing" value="20" min="1" step="1" />
+        </div>
+        <button id="btnGenerate" class="primary" disabled>Gerar linhas de plantio</button>
+      </div>
+
+      <div class="section" id="resultsSection" style="display:none;">
+        <h2>6. Resultado</h2>
+        <div class="stat-grid">
+          <div class="stat"><div class="num" id="statLines">–</div><div class="lbl">Linhas</div></div>
+          <div class="stat"><div class="num" id="statLength">–</div><div class="lbl">Km totais</div></div>
+        </div>
+        <div style="margin-top:12px;">
+          <div class="legend"><span class="swatch" style="background:#D9A441;"></span> Linha-guia</div>
+          <div class="legend"><span class="swatch" style="background:#2F4A3C;"></span> Linhas de plantio</div>
+        </div>
+        <div style="margin-top:12px;">
+          <label style="margin-bottom:2px;">Perfil de elevação ao longo da linha-guia</label>
+          <canvas id="profileChart" width="320" height="70"></canvas>
+        </div>
+        <button id="btnExport" class="clay" style="width:100%; margin-top:12px;">Baixar KML</button>
+        <div class="hint" style="margin-top:6px;">O KML exportado também pode ser importado em apps de orientação de campo (ex: AgriBus-NAVI/AgriBus-Web) pra guiar o trator pelas linhas em tempo real.</div>
+      </div>
+
+      <div class="section">
+        <h2>7. Talhões salvos <span class="badge" id="fieldCount">0</span></h2>
+        <div class="inline-row">
+          <input type="text" id="fieldName" placeholder="Nome do talhão" />
+          <button id="btnSaveField">Salvar</button>
+        </div>
+        <div class="hint">Salvo só nesta sessão (fecha se a página recarregar) — no sistema final isso ficaria salvo na nuvem, por talhão/cliente.</div>
+        <div class="field-list" id="fieldList"></div>
+      </div>
+
+      <div class="section">
+        <div class="notice">
+          <strong>Sobre a elevação:</strong> a fonte automática tem resolução de ~90m — boa pra relevo regional, mas suaviza microrrelevo de talhão. Se você tem um levantamento RTK/topográfico do talhão, use-o (opção "Meu levantamento") pra maior precisão. Ambos os modos precisam de conexão com a internet só na primeira vez (modo automático) ou nenhuma (modo CSV, roda local).
+        </div>
+      </div>
+
+
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Turf.js/6.5.0/turf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.9.2/proj4.js"></script>
+<script>
+(function(){
+
+var map = L.map('map', { zoomControl: true }).setView([-12.5, -55.7], 6);
+var osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19, attribution: '&copy; OpenStreetMap'
+});
+var satLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+  maxZoom: 19, attribution: 'Imagery &copy; Esri, Maxar, Earthstar Geographics'
+});
+var satLabels = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+  maxZoom: 19, attribution: 'Esri'
+});
+
+satLayer.addTo(map);
+
+L.control.layers(
+  { 'Satélite': satLayer, 'Mapa (ruas)': osmLayer },
+  { 'Rótulos/limites': satLabels },
+  { position: 'topright', collapsed: true }
+).addTo(map);
+
+var drawnItems = new L.FeatureGroup();
+map.addLayer(drawnItems);
+
+var linesLayer = L.layerGroup().addTo(map);
+var guideLayer = L.layerGroup().addTo(map);
+
+var drawControl = new L.Control.Draw({
+  edit: { featureGroup: drawnItems, remove: false },
+  draw: {
+    polygon: { allowIntersection:false, showArea:true, shapeOptions:{ color:'#2F4A3C', weight:2 } },
+    marker:false, circle:false, circlemarker:false, rectangle:false, polyline:false
+  }
+});
+
+var currentPolygonGeoJSON = null;
+var originalPolygonGeoJSON = null;
+var lastResult = null;
+var guideMode = 'contour';
+var abPoints = [];
+var abMarkers = L.layerGroup().addTo(map);
+var abPickingActive = false;
+var savedFields = [];
+
+var cutLayer = L.layerGroup().addTo(map);
+var cutLines = [];
+var cutParts = [];
+var cutPickingActive = false;
+var partColors = ['#2F4A3C','#B4622B','#8AA68C','#6E4E1D','#4A6FA5','#A32D2D'];
+
+var cutDrawControl = new L.Control.Draw({
+  draw: { polyline: { shapeOptions:{ color:'#A32D2D', weight:3 } }, polygon:false, marker:false, circle:false, circlemarker:false, rectangle:false }
+});
+
+document.getElementById('btnCutLine').addEventListener('click', function(){
+  if(!currentPolygonGeoJSON){ alert('Defina a área do talhão primeiro.'); return; }
+  map.addControl(cutDrawControl);
+  new L.Draw.Polyline(map, cutDrawControl.options.draw.polyline).enable();
+  cutPickingActive = true;
+});
+
+map.on(L.Draw.Event.CREATED, function(e){
+  if(cutPickingActive){
+    cutPickingActive = false;
+    map.removeControl(cutDrawControl);
+    var line = e.layer.toGeoJSON();
+    cutLines.push(line);
+    applyCuts();
+    return;
+  }
+  var layer = e.layer;
+  var gj = layer.toGeoJSON();
+  map.removeControl(drawControl);
+  setPolygon(gj.geometry ? gj : gj.geometry);
+});
+
+function resetCuts(){
+  cutLines = [];
+  cutParts = [];
+  cutLayer.clearLayers();
+  document.getElementById('partsList').innerHTML = '';
+  document.getElementById('btnUseOpen').disabled = true;
+  document.getElementById('btnExportOpenKML').disabled = true;
+}
+
+document.getElementById('btnCutReset').addEventListener('click', function(){
+  currentPolygonGeoJSON = originalPolygonGeoJSON;
+  updateAreaStat();
+  resetCuts();
+  var layer = L.geoJSON(currentPolygonGeoJSON);
+  try{ map.fitBounds(layer.getBounds(), { padding:[30,30] }); }catch(e){}
+});
+
+function applyCuts(){
+  if(!originalPolygonGeoJSON || cutLines.length===0) return;
+  cutLayer.clearLayers();
+  var working = originalPolygonGeoJSON;
+  var polygonsSoFar = [working];
+
+  cutLines.forEach(function(line){
+    var buffered = turf.buffer(line, 0.4, {units:'meters'});
+    var nextPolygons = [];
+    polygonsSoFar.forEach(function(poly){
+      var diff;
+      try{ diff = turf.difference(poly, buffered); }
+      catch(e){ diff = null; }
+      if(!diff){ nextPolygons.push(poly); return; }
+      var flat = turf.flatten(diff);
+      flat.features.forEach(function(f){ nextPolygons.push(f); });
+    });
+    polygonsSoFar = nextPolygons;
+    L.geoJSON(line, { style:{ color:'#A32D2D', weight:3, dashArray:'4,3' } }).addTo(cutLayer);
+  });
+
+  cutParts = polygonsSoFar.map(function(p, i){
+    return { geojson: p, tag: 'open', color: partColors[i % partColors.length], ha: turf.area(p)/10000 };
+  });
+
+  renderCutParts();
+}
+
+var cutPartLayers = [];
+function renderCutParts(){
+  cutPartLayers.forEach(function(l){ cutLayer.removeLayer(l); });
+  cutPartLayers = [];
+  var list = document.getElementById('partsList');
+  list.innerHTML = '';
+
+  cutParts.forEach(function(part, i){
+    var layer = L.geoJSON(part.geojson, {
+      style:{ color: part.color, weight:2, fillOpacity: part.tag==='open' ? 0.25 : 0.08 }
+    }).addTo(cutLayer);
+    cutPartLayers.push(layer);
+
+    var item = document.createElement('div');
+    item.className = 'part-item';
+    item.innerHTML =
+      '<span class="pcolor" style="background:'+part.color+';"></span>' +
+      '<span class="pname">Parte ' + (i+1) + '</span>' +
+      '<span class="pha">' + part.ha.toFixed(2) + ' ha</span>' +
+      '<span class="tag-toggle">' +
+        '<button data-idx="'+i+'" data-tag="open" class="'+(part.tag==='open'?'active-open':'')+'">Aberta</button>' +
+        '<button data-idx="'+i+'" data-tag="closed" class="'+(part.tag==='closed'?'active-closed':'')+'">Fechada</button>' +
+      '</span>';
+    list.appendChild(item);
+  });
+
+  list.querySelectorAll('button').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var idx = parseInt(this.getAttribute('data-idx'));
+      cutParts[idx].tag = this.getAttribute('data-tag');
+      renderCutParts();
+    });
+  });
+
+  var hasOpen = cutParts.some(function(p){ return p.tag==='open'; });
+  document.getElementById('btnUseOpen').disabled = !hasOpen;
+  document.getElementById('btnExportOpenKML').disabled = !hasOpen;
+}
+
+document.getElementById('btnUseOpen').addEventListener('click', function(){
+  var openParts = cutParts.filter(function(p){ return p.tag==='open'; }).map(function(p){ return p.geojson; });
+  if(openParts.length===0) return;
+  var merged = openParts.length===1 ? openParts[0] : turf.combine(turf.featureCollection(openParts)).features[0];
+  currentPolygonGeoJSON = merged;
+  updateAreaStat();
+  linesLayer.clearLayers();
+  guideLayer.clearLayers();
+  document.getElementById('resultsSection').style.display = 'none';
+  alert('Área aberta definida como talhão ativo (' + openParts.reduce(function(s,p){return s+turf.area(p)/10000;},0).toFixed(2) + ' ha). Agora é só gerar as linhas de plantio normalmente.');
+});
+
+document.getElementById('btnExportOpenKML').addEventListener('click', function(){
+  var openParts = cutParts.filter(function(p){ return p.tag==='open'; });
+  if(openParts.length===0) return;
+  var kml = '<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2"><Document>\n';
+  kml += '<name>Areas abertas</name>\n';
+  kml += '<Style id="aberta"><LineStyle><color>ff3c4a2f</color><width>2</width></LineStyle><PolyStyle><color>4d3c4a2f</color></PolyStyle></Style>\n';
+  openParts.forEach(function(part, i){
+    var rings = part.geojson.geometry.type === 'Polygon' ? [part.geojson.geometry.coordinates] : part.geojson.geometry.coordinates;
+    rings.forEach(function(poly, j){
+      kml += '<Placemark><name>Area aberta ' + (i+1) + (rings.length>1 ? ('.'+(j+1)) : '') + ' (' + part.ha.toFixed(2) + ' ha)</name><styleUrl>#aberta</styleUrl><Polygon><outerBoundaryIs><LinearRing><coordinates>';
+      kml += poly[0].map(function(c){ return c[0]+','+c[1]+',0'; }).join(' ');
+      kml += '</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark>\n';
+    });
+  });
+  kml += '</Document></kml>';
+  var blob = new Blob([kml], {type:'application/vnd.google-earth.kml+xml'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = 'areas_abertas.kml';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+function setPolygon(geojsonPolygon){
+  drawnItems.clearLayers();
+  linesLayer.clearLayers();
+  guideLayer.clearLayers();
+  abMarkers.clearLayers();
+  abPoints = [];
+  updateAbStatus();
+  document.getElementById('resultsSection').style.display = 'none';
+  currentPolygonGeoJSON = geojsonPolygon;
+  originalPolygonGeoJSON = geojsonPolygon;
+  resetCuts();
+  document.getElementById('cutSection').style.display = 'block';
+  var layer = L.geoJSON(geojsonPolygon, { style:{ color:'#2F4A3C', weight:2, fillOpacity:0.08 } });
+  layer.eachLayer(function(l){ drawnItems.addLayer(l); });
+  try{ map.fitBounds(layer.getBounds(), { padding:[30,30] }); }catch(e){}
+  updateAreaStat();
+  document.getElementById('btnGenerate').disabled = false;
+}
+
+function updateAreaStat(){
+  var el = document.getElementById('areaStat');
+  if(!currentPolygonGeoJSON){ el.innerHTML=''; return; }
+  var areaM2 = turf.area(currentPolygonGeoJSON);
+  var ha = areaM2/10000;
+  el.innerHTML = '<span class="badge">' + ha.toFixed(2) + ' ha</span>';
+}
+
+document.getElementById('btnDraw').addEventListener('click', function(){
+  map.addControl(drawControl);
+  new L.Draw.Polygon(map, drawControl.options.draw.polygon).enable();
+});
+
+document.getElementById('btnImport').addEventListener('click', function(){
+  document.getElementById('fileInput').click();
+});
+
+document.getElementById('fileInput').addEventListener('change', function(e){
+  var file = e.target.files[0];
+  if(!file) return;
+  var reader = new FileReader();
+  reader.onload = function(ev){
+    try{
+      var text = ev.target.result;
+      var geom = null;
+      if(file.name.toLowerCase().endsWith('.kml')){
+        geom = parseKMLPolygon(text);
+      } else {
+        var parsed = JSON.parse(text);
+        geom = extractPolygonFromGeoJSON(parsed);
+      }
+      if(!geom){ alert('Não encontrei um polígono válido nesse arquivo.'); return; }
+      setPolygon({ type:'Feature', properties:{}, geometry: geom });
+    }catch(err){
+      alert('Erro ao ler o arquivo: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+
+function extractPolygonFromGeoJSON(obj){
+  if(obj.type === 'Feature' && obj.geometry) return obj.geometry;
+  if(obj.type === 'FeatureCollection'){
+    for(var i=0;i<obj.features.length;i++){
+      var f = obj.features[i];
+      if(f.geometry && (f.geometry.type==='Polygon'||f.geometry.type==='MultiPolygon')) return f.geometry;
+    }
+  }
+  if(obj.type === 'Polygon' || obj.type === 'MultiPolygon') return obj;
+  return null;
+}
+
+function parseKMLPolygon(text){
+  var parser = new DOMParser();
+  var xml = parser.parseFromString(text, 'text/xml');
+  var coordNodes = xml.getElementsByTagName('coordinates');
+  if(coordNodes.length === 0) return null;
+  var raw = coordNodes[0].textContent.trim();
+  var pts = raw.split(/\s+/).map(function(p){
+    var parts = p.split(',');
+    return [parseFloat(parts[0]), parseFloat(parts[1])];
+  }).filter(function(p){ return !isNaN(p[0]) && !isNaN(p[1]); });
+  if(pts.length < 3) return null;
+  var first = pts[0], last = pts[pts.length-1];
+  if(first[0]!==last[0] || first[1]!==last[1]) pts.push(first);
+  return { type:'Polygon', coordinates:[pts] };
+}
+
+function hashSeed(str){
+  var h = 0;
+  for(var i=0;i<str.length;i++){ h = (Math.imul(31,h) + str.charCodeAt(i))|0; }
+  return (h % 1000) / 1000 * Math.PI * 2;
+}
+
+// ---------- Elevação real: Open-Meteo / Open-Elevation (com CORS habilitado) ou levantamento CSV (IDW) ----------
+var elevMode = 'srtm';
+var scatterPoints = null; // [{lon,lat,z}, ...] quando modo CSV
+var elevGrid = null;      // {nx,ny,minX,minY,maxX,maxY,values,boundsKey}
+var elevBusy = false;
+
+var UTM_DEFS = {
+  utm20s: '+proj=utm +zone=20 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',
+  utm21s: '+proj=utm +zone=21 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',
+  utm22s: '+proj=utm +zone=22 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs'
+};
+
+document.getElementById('elevModeSrtm').addEventListener('click', function(){
+  elevMode = 'srtm';
+  this.classList.add('active');
+  document.getElementById('elevModeCsv').classList.remove('active');
+  document.getElementById('srtmControls').style.display = 'block';
+  document.getElementById('csvControls').style.display = 'none';
+  elevGrid = null;
+  setElevStatus('Nenhuma elevação preparada ainda — clique em "Preparar elevação agora" ou em "Gerar linhas de plantio".');
+});
+document.getElementById('elevModeCsv').addEventListener('click', function(){
+  elevMode = 'csv';
+  this.classList.add('active');
+  document.getElementById('elevModeSrtm').classList.remove('active');
+  document.getElementById('srtmControls').style.display = 'none';
+  document.getElementById('csvControls').style.display = 'block';
+  elevGrid = null;
+  setElevStatus(scatterPoints ? (scatterPoints.length + ' pontos carregados — clique em "Preparar elevação agora".') : 'Carregue um arquivo de pontos primeiro.');
+});
+
+function setElevStatus(msg){ document.getElementById('elevStatus').textContent = msg; }
+
+document.getElementById('btnCsvUpload').addEventListener('click', function(){
+  document.getElementById('csvFileInput').click();
+});
+
+document.getElementById('csvFileInput').addEventListener('change', function(e){
+  var file = e.target.files[0];
+  if(!file) return;
+  var reader = new FileReader();
+  reader.onload = function(ev){
+    try{
+      var mode = document.getElementById('csvCoordSystem').value;
+      var text = ev.target.result;
+      var lines = text.split(/\r?\n/).filter(function(l){ return l.trim().length>0; });
+      var raw = [];
+      lines.forEach(function(line){
+        var parts = line.split(/[,;\t]+/).map(function(s){ return s.trim().replace(',', '.'); });
+        if(parts.length<3) return;
+        var a = parseFloat(parts[0]), b = parseFloat(parts[1]), c = parseFloat(parts[2]);
+        if(isNaN(a)||isNaN(b)||isNaN(c)) return;
+        raw.push([a,b,c]);
+      });
+      if(raw.length < 3){ alert('Não encontrei pelo menos 3 pontos válidos (X,Y,Z) nesse arquivo.'); return; }
+      var pts = [];
+      if(mode === 'latlon'){
+        raw.forEach(function(p){ pts.push({lon:p[0], lat:p[1], z:p[2]}); });
+      } else {
+        var def = UTM_DEFS[mode];
+        raw.forEach(function(p){
+          var ll = proj4(def, 'WGS84', [p[0], p[1]]);
+          pts.push({lon:ll[0], lat:ll[1], z:p[2]});
+        });
+      }
+      scatterPoints = pts;
+      elevGrid = null;
+      var zMin = Math.min.apply(null, pts.map(function(p){return p.z;}));
+      var zMax = Math.max.apply(null, pts.map(function(p){return p.z;}));
+      setElevStatus(pts.length + ' pontos carregados — elevação de ' + zMin.toFixed(1) + ' a ' + zMax.toFixed(1) + ' m. Clique em "Preparar elevação agora".');
+    }catch(err){
+      alert('Erro ao ler o arquivo: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+
+function idwAt(lon, lat, pts){
+  var num=0, den=0;
+  for(var i=0;i<pts.length;i++){
+    var dx = pts[i].lon-lon, dy = pts[i].lat-lat;
+    var d2 = dx*dx + dy*dy;
+    if(d2 < 1e-16){ return pts[i].z; }
+    var w = 1/d2;
+    num += w*pts[i].z; den += w;
+  }
+  return den>0 ? num/den : 0;
+}
+
+async function fetchOpenMeteoBatch(batch){
+  var lats = batch.map(function(p){ return p[0].toFixed(6); }).join(',');
+  var lons = batch.map(function(p){ return p[1].toFixed(6); }).join(',');
+  var url = 'https://api.open-meteo.com/v1/elevation?latitude=' + lats + '&longitude=' + lons;
+  var resp = await fetch(url);
+  if(!resp.ok){ throw new Error('Open-Meteo HTTP ' + resp.status); }
+  var data = await resp.json();
+  if(!data.elevation){ throw new Error('Open-Meteo: resposta sem elevação'); }
+  return data.elevation.map(function(v){ return v===null ? 0 : v; });
+}
+
+async function fetchOpenElevationBatch(batch){
+  var locStr = batch.map(function(p){ return p[0].toFixed(6)+','+p[1].toFixed(6); }).join('|');
+  var url = 'https://api.open-elevation.com/api/v1/lookup?locations=' + encodeURIComponent(locStr);
+  var resp = await fetch(url);
+  if(!resp.ok){ throw new Error('Open-Elevation HTTP ' + resp.status); }
+  var data = await resp.json();
+  if(!data.results){ throw new Error('Open-Elevation: resposta sem resultados'); }
+  return data.results.map(function(r){ return r.elevation===null ? 0 : r.elevation; });
+}
+
+async function fetchElevationGrid(minX,minY,maxX,maxY,nx,ny,onProgress){
+  var locations = [];
+  for(var y=0;y<ny;y++){
+    for(var x=0;x<nx;x++){
+      locations.push([ minY + (y/(ny-1))*(maxY-minY), minX + (x/(nx-1))*(maxX-minX) ]);
+    }
+  }
+  var values = new Array(nx*ny).fill(0);
+  var batchSize = 100;
+  var totalBatches = Math.ceil(locations.length/batchSize);
+  var provider = 'Open-Meteo';
+  for(var b=0;b<totalBatches;b++){
+    var batch = locations.slice(b*batchSize, (b+1)*batchSize);
+    var result;
+    try{
+      result = await fetchOpenMeteoBatch(batch);
+      provider = 'Open-Meteo';
+    }catch(e1){
+      try{
+        result = await fetchOpenElevationBatch(batch);
+        provider = 'Open-Elevation';
+      }catch(e2){
+        throw new Error('Não consegui buscar elevação (verifique sua conexão com a internet). Detalhe: ' + e2.message);
+      }
+    }
+    result.forEach(function(v,i){ values[b*batchSize+i] = v; });
+    if(onProgress) onProgress(Math.round(((b+1)/totalBatches)*100), provider);
+  }
+  return { nx:nx, ny:ny, minX:minX, minY:minY, maxX:maxX, maxY:maxY, values:values, provider:provider };
+}
+
+function buildIDWGrid(pts, minX,minY,maxX,maxY,nx,ny){
+  var values = new Array(nx*ny);
+  for(var y=0;y<ny;y++){
+    for(var x=0;x<nx;x++){
+      var lon = minX + (x/(nx-1))*(maxX-minX);
+      var lat = minY + (y/(ny-1))*(maxY-minY);
+      values[x+y*nx] = idwAt(lon, lat, pts);
+    }
+  }
+  return { nx:nx, ny:ny, minX:minX, minY:minY, maxX:maxX, maxY:maxY, values:values };
+}
+
+function sampleGrid(grid, lon, lat){
+  var fx = (lon-grid.minX)/(grid.maxX-grid.minX)*(grid.nx-1);
+  var fy = (lat-grid.minY)/(grid.maxY-grid.minY)*(grid.ny-1);
+  fx = Math.max(0, Math.min(grid.nx-1, fx));
+  fy = Math.max(0, Math.min(grid.ny-1, fy));
+  var x0=Math.floor(fx), x1=Math.min(grid.nx-1,x0+1);
+  var y0=Math.floor(fy), y1=Math.min(grid.ny-1,y0+1);
+  var tx=fx-x0, ty=fy-y0;
+  var v00=grid.values[x0+y0*grid.nx], v10=grid.values[x1+y0*grid.nx];
+  var v01=grid.values[x0+y1*grid.nx], v11=grid.values[x1+y1*grid.nx];
+  var v0 = v00*(1-tx)+v10*tx, v1 = v01*(1-tx)+v11*tx;
+  return v0*(1-ty)+v1*ty;
+}
+
+function boundsKeyFor(bbox){ return bbox.map(function(n){ return n.toFixed(5); }).join(','); }
+
+async function ensureElevGrid(bbox){
+  var key = boundsKeyFor(bbox) + '|' + elevMode;
+  if(elevGrid && elevGrid.boundsKey === key) return elevGrid;
+  if(elevMode === 'csv' && (!scatterPoints || scatterPoints.length < 3)){
+    throw new Error('Carregue um arquivo de levantamento (CSV) antes de gerar as linhas.');
+  }
+  var nx = 36, ny = 36;
+  var grid;
+  if(elevMode === 'srtm'){
+    grid = await fetchElevationGrid(bbox[0],bbox[1],bbox[2],bbox[3], nx, ny, function(pct, provider){
+      setElevStatus('Buscando elevação (' + provider + ')... ' + pct + '%');
+    });
+    setElevStatus('Elevação real carregada para esta área (fonte: ' + grid.provider + ').');
+  } else {
+    grid = buildIDWGrid(scatterPoints, bbox[0],bbox[1],bbox[2],bbox[3], nx, ny);
+    setElevStatus('Elevação interpolada a partir de ' + scatterPoints.length + ' pontos do seu levantamento.');
+  }
+  grid.boundsKey = key;
+  elevGrid = grid;
+  return grid;
+}
+
+document.getElementById('btnPrepElev').addEventListener('click', async function(){
+  if(!currentPolygonGeoJSON){ alert('Defina a área do talhão primeiro.'); return; }
+  if(elevBusy) return;
+  elevBusy = true;
+  var btn = this;
+  btn.disabled = true;
+  try{
+    await ensureElevGrid(turf.bbox(currentPolygonGeoJSON));
+  }catch(err){
+    setElevStatus('Erro ao preparar elevação: ' + err.message);
+  }
+  btn.disabled = false;
+  elevBusy = false;
+});
+
+// ---------- Geração das linhas de plantio ----------
+async function generateLines(){
+  if(!currentPolygonGeoJSON) return;
+  if(elevBusy) return;
+
+  var poly = currentPolygonGeoJSON;
+  var bbox = turf.bbox(poly);
+  var minX=bbox[0], minY=bbox[1], maxX=bbox[2], maxY=bbox[3];
+
+  var btn = document.getElementById('btnGenerate');
+  var originalLabel = btn.textContent;
+  elevBusy = true;
+  btn.disabled = true;
+  var grid;
+  try{
+    btn.textContent = 'Preparando elevação...';
+    grid = await ensureElevGrid(bbox);
+  }catch(err){
+    alert('Não foi possível preparar a elevação: ' + err.message);
+    btn.textContent = originalLabel;
+    btn.disabled = false;
+    elevBusy = false;
+    return;
+  }
+  btn.textContent = originalLabel;
+  btn.disabled = false;
+  elevBusy = false;
+
+  linesLayer.clearLayers();
+  guideLayer.clearLayers();
+
+  var baseCoords, baseLine;
+
+  if(guideMode === 'ab'){
+    if(abPoints.length < 2){ alert('Marque os pontos A e B no mapa antes de gerar as linhas.'); return; }
+    var a = abPoints[0], b = abPoints[1];
+    var bearing = turf.bearing(turf.point(a), turf.point(b));
+    var diagAB = turf.distance(turf.point([minX,minY]), turf.point([maxX,maxY]), {units:'meters'});
+    var extend = diagAB;
+    var p1 = turf.destination(turf.point(a), extend/1000, bearing+180, {units:'kilometers'});
+    var p2 = turf.destination(turf.point(b), extend/1000, bearing, {units:'kilometers'});
+    baseCoords = [p1.geometry.coordinates, p2.geometry.coordinates];
+    baseLine = turf.lineString(baseCoords);
+  } else {
+    var nx = grid.nx, ny = grid.ny;
+    var values = grid.values;
+    var minV=Infinity, maxV=-Infinity;
+    for(var i=0;i<values.length;i++){ if(values[i]<minV) minV=values[i]; if(values[i]>maxV) maxV=values[i]; }
+    var percentile = parseFloat(document.getElementById('percentile').value)/100;
+    var target = minV + (maxV-minV)*percentile;
+
+    var gridToLonLat = function(gx, gy){
+      return [ grid.minX + (gx/(nx-1))*(grid.maxX-grid.minX), grid.minY + (gy/(ny-1))*(grid.maxY-grid.minY) ];
+    };
+
+    var contourGen = d3.contours().size([nx,ny]).thresholds([target]);
+    var contourResult = contourGen(values);
+    if(!contourResult.length){ alert('Não foi possível gerar curva de nível com esses parâmetros. Tente outro percentil.'); return; }
+
+    var bestRing = null, bestLen = 0;
+    contourResult[0].coordinates.forEach(function(polygonRings){
+      var ring = polygonRings[0];
+      if(ring.length > bestLen){ bestLen = ring.length; bestRing = ring; }
+    });
+    if(!bestRing){ alert('Não encontrei uma linha de contorno utilizável. Tente outro percentil.'); return; }
+
+    baseCoords = bestRing.map(function(p){ return gridToLonLat(p[0], p[1]); });
+    baseLine = turf.lineString(baseCoords);
+  }
+
+  var spacing = parseFloat(document.getElementById('spacing').value) || 20;
+  var polyBbox = turf.bbox(poly);
+  var diag = turf.distance(turf.point([polyBbox[0],polyBbox[1]]), turf.point([polyBbox[2],polyBbox[3]]), {units:'meters'});
+  var maxSteps = Math.min(150, Math.ceil((diag/2)/spacing) + 2);
+
+  var allSegments = [];
+  var totalLenM = 0;
+
+  function clipAndPush(line){
+    var coords = line.geometry.coordinates;
+    var run = [];
+    for(var i=0;i<coords.length;i++){
+      var inside = false;
+      try{ inside = turf.booleanPointInPolygon(turf.point(coords[i]), poly); }catch(e){ inside=false; }
+      if(inside){ run.push(coords[i]); }
+      else{
+        if(run.length>=2){ allSegments.push(run); }
+        run = [];
+      }
+    }
+    if(run.length>=2){ allSegments.push(run); }
+  }
+
+  clipAndPush(baseLine);
+
+  for(var dir=-1; dir<=1; dir+=2){
+    for(var k=1;k<=maxSteps;k++){
+      var dist = dir*k*spacing;
+      var offset;
+      try{ offset = turf.lineOffset(baseLine, dist, {units:'meters'}); }
+      catch(e){ break; }
+      var obbox = turf.bbox(offset);
+      var noOverlap = obbox[2]<polyBbox[0] || obbox[0]>polyBbox[2] || obbox[3]<polyBbox[1] || obbox[1]>polyBbox[3];
+      if(noOverlap) break;
+      clipAndPush(offset);
+    }
+  }
+
+  allSegments.forEach(function(seg){
+    var ls = turf.lineString(seg);
+    totalLenM += turf.length(ls, {units:'meters'});
+    L.polyline(seg.map(function(c){return [c[1],c[0]];}), { color:'#2F4A3C', weight:2, opacity:0.85 }).addTo(linesLayer);
+  });
+
+  L.polyline(baseCoords.map(function(c){return [c[1],c[0]];}), { color:'#D9A441', weight:3, opacity:0.9, dashArray:'6,4' }).addTo(guideLayer);
+
+  lastResult = { segments: allSegments, guide: baseCoords };
+
+  document.getElementById('statLines').textContent = allSegments.length;
+  document.getElementById('statLength').textContent = (totalLenM/1000).toFixed(2);
+  document.getElementById('resultsSection').style.display = 'block';
+  drawElevationProfile(baseCoords, grid);
+}
+
+document.getElementById('percentile').addEventListener('input', function(){
+  document.getElementById('percentileOut').textContent = this.value + '%';
+});
+
+document.getElementById('modeContour').addEventListener('click', function(){
+  guideMode = 'contour';
+  this.classList.add('active');
+  document.getElementById('modeAB').classList.remove('active');
+  document.getElementById('contourControls').style.display = 'block';
+  document.getElementById('abControls').style.display = 'none';
+});
+
+document.getElementById('modeAB').addEventListener('click', function(){
+  guideMode = 'ab';
+  this.classList.add('active');
+  document.getElementById('modeContour').classList.remove('active');
+  document.getElementById('contourControls').style.display = 'none';
+  document.getElementById('abControls').style.display = 'block';
+});
+
+function updateAbStatus(){
+  var el = document.getElementById('abStatus');
+  if(abPoints.length===0){ el.textContent = 'Nenhum ponto marcado'; el.classList.remove('ready'); }
+  else if(abPoints.length===1){ el.textContent = 'Ponto A marcado — clique no mapa para marcar B'; el.classList.remove('ready'); }
+  else{ el.textContent = 'Pontos A e B marcados'; el.classList.add('ready'); }
+}
+
+document.getElementById('btnSetAB').addEventListener('click', function(){
+  if(!currentPolygonGeoJSON){ alert('Defina a área do talhão primeiro.'); return; }
+  abMarkers.clearLayers();
+  abPoints = [];
+  updateAbStatus();
+  abPickingActive = true;
+  this.textContent = 'Clique no mapa: marque o ponto A';
+});
+
+map.on('click', function(e){
+  if(!abPickingActive) return;
+  var label = abPoints.length===0 ? 'A' : 'B';
+  var marker = L.circleMarker(e.latlng, { radius:6, color:'#B4622B', weight:2, fillColor:'#B4622B', fillOpacity:1 }).addTo(abMarkers);
+  marker.bindTooltip(label, { permanent:true, direction:'top', offset:[0,-6] }).openTooltip();
+  abPoints.push([e.latlng.lng, e.latlng.lat]);
+  updateAbStatus();
+  if(abPoints.length>=2){
+    abPickingActive = false;
+    document.getElementById('btnSetAB').textContent = 'Marcar pontos A e B no mapa';
+  }
+});
+
+function drawElevationProfile(coords, grid){
+  var canvas = document.getElementById('profileChart');
+  var ctx = canvas.getContext('2d');
+  var w = canvas.width, h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+  if(!coords.length || !grid){ return; }
+  var n = Math.min(80, coords.length);
+  var elevs = [];
+  for(var i=0;i<n;i++){
+    var idx = Math.floor(i*(coords.length-1)/(n-1||1));
+    var c = coords[idx];
+    elevs.push(sampleGrid(grid, c[0], c[1]));
+  }
+  var minE = Math.min.apply(null, elevs), maxE = Math.max.apply(null, elevs);
+  var range = (maxE-minE) || 1;
+  ctx.strokeStyle = '#2F4A3C';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  elevs.forEach(function(e, i){
+    var x = (i/(elevs.length-1||1)) * (w-4) + 2;
+    var y = h - 4 - ((e-minE)/range) * (h-8);
+    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+}
+
+
+function fieldAreaHa(gj){
+  try{ return turf.area(gj)/10000; }catch(e){ return 0; }
+}
+
+function renderFieldList(){
+  var list = document.getElementById('fieldList');
+  document.getElementById('fieldCount').textContent = savedFields.length;
+  list.innerHTML = '';
+  savedFields.forEach(function(f, i){
+    var item = document.createElement('div');
+    item.className = 'field-item';
+    item.innerHTML = '<div><div class="fname"></div><div class="fmeta"></div></div><div class="fdel">remover</div>';
+    item.querySelector('.fname').textContent = f.name;
+    item.querySelector('.fmeta').textContent = f.ha.toFixed(2) + ' ha · ' + f.spacing + ' m';
+    item.addEventListener('click', function(ev){
+      if(ev.target.classList.contains('fdel')) return;
+      loadField(i);
+    });
+    item.querySelector('.fdel').addEventListener('click', function(ev){
+      ev.stopPropagation();
+      savedFields.splice(i,1);
+      renderFieldList();
+    });
+    list.appendChild(item);
+  });
+}
+
+function loadField(i){
+  var f = savedFields[i];
+  setPolygon(f.geojson);
+  document.getElementById('spacing').value = f.spacing;
+  document.getElementById('percentile').value = f.percentile;
+  document.getElementById('percentileOut').textContent = f.percentile + '%';
+}
+
+document.getElementById('btnSaveField').addEventListener('click', function(){
+  if(!currentPolygonGeoJSON){ alert('Defina a área do talhão primeiro.'); return; }
+  var nameInput = document.getElementById('fieldName');
+  var name = nameInput.value.trim() || ('Talhão ' + (savedFields.length+1));
+  savedFields.push({
+    name: name,
+    geojson: currentPolygonGeoJSON,
+    ha: fieldAreaHa(currentPolygonGeoJSON),
+    spacing: document.getElementById('spacing').value,
+    percentile: document.getElementById('percentile').value
+  });
+  nameInput.value = '';
+  renderFieldList();
+});
+
+document.getElementById('btnGenerate').addEventListener('click', generateLines);
+
+document.getElementById('btnExport').addEventListener('click', function(){
+  if(!lastResult) return;
+  var kml = '<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2"><Document>\n';
+  kml += '<name>Linhas de plantio</name>\n';
+  kml += '<Style id="guide"><LineStyle><color>ff41a4d9</color><width>3</width></LineStyle></Style>\n';
+  kml += '<Style id="plant"><LineStyle><color>ff3c4a2f</color><width>2</width></LineStyle></Style>\n';
+  kml += '<Placemark><name>Linha-guia</name><styleUrl>#guide</styleUrl><LineString><coordinates>';
+  kml += lastResult.guide.map(function(c){ return c[0]+','+c[1]+',0'; }).join(' ');
+  kml += '</coordinates></LineString></Placemark>\n';
+  lastResult.segments.forEach(function(seg, i){
+    kml += '<Placemark><name>Linha ' + (i+1) + '</name><styleUrl>#plant</styleUrl><LineString><coordinates>';
+    kml += seg.map(function(c){ return c[0]+','+c[1]+',0'; }).join(' ');
+    kml += '</coordinates></LineString></Placemark>\n';
+  });
+  kml += '</Document></kml>';
+  var blob = new Blob([kml], {type:'application/vnd.google-earth.kml+xml'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = 'linhas_de_plantio.kml';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+})();
+</script>
+</body>
+</html>
